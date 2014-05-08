@@ -5,6 +5,6 @@ setup(name='django-image-tools',
       description='Image tools for Django',
       author='Bonsai Studio',
       author_email='info@bonsai-studio.net',
-      url='http://github.com/xelhark/django-image-tools',
+      url='http://github.com/bonsaistudio/django-image-tools',
       packages=['django_image_tools', ],
      )
