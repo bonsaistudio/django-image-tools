@@ -1,3 +1,9 @@
+.. image:: design/images/django-image-tools-icon.png
+   :height: 512
+   :width: 512
+   :scale: 50
+   :alt: Django Image Tools icon
+
 ==================
 Django Image Tools
 ==================
