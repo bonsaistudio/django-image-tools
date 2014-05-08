@@ -102,7 +102,7 @@ class SimpleTest(TestCase):
         """
         image = ImageWrapper.objects.get(filename=u'test_image')
 
-        self.assertEqual(image.get_thumbnail(), u'/media/derived/test_image_thumbnail.jpg')
+        self.assertEqual(image.get_thumbnail(), u'/media/cache/test_image_thumbnail.jpg')
         self.assertTrue(os.path.exists(path_for_image_with_size(image, self.size)))
 
     def testLazyCreation(self):
@@ -113,7 +113,7 @@ class SimpleTest(TestCase):
         self.size.height = 250
         self.size.save()
         image = ImageWrapper.objects.all()[0]
-        self.assertEqual(image.get_thumbnail(), u'/media/derived/test_image_thumbnail.jpg')
+        self.assertEqual(image.get_thumbnail(), u'/media/cache/test_image_thumbnail.jpg')
         self.assertTrue(os.path.exists(path_for_image_with_size(image, self.size)))
 
         img = PILImage.open(path_for_image_with_size(image, self.size))
@@ -134,7 +134,7 @@ class SimpleTest(TestCase):
     def test_thumbnail(self):
         image = ImageWrapper.objects.get(filename=u'test_image')
         # When there IS a thumbnail, the code should be this
-        self.assertEqual(image.thumbnail(), u'<img src="/media/derived/test_image_thumbnail.jpg" width="100" height="100" />')
+        self.assertEqual(image.thumbnail(), u'<img src="/media/cache/test_image_thumbnail.jpg" width="100" height="100" />')
         self.size.delete()
         image = ImageWrapper.objects.get(filename=u'test_image')
         self.assertEqual(image.thumbnail(), u'<img src="/media/test_image.jpg" width="100" height="100" />')

@@ -1,9 +1,3 @@
-.. image:: design/images/django-image-tools-icon.png
-   :height: 512
-   :width: 512
-   :scale: 50
-   :alt: Django Image Tools icon
-
 ==================
 Django Image Tools
 ==================
@@ -24,6 +18,28 @@ and of course, install in your INSTALLED_APPS as
     django_image_tools
 
 It requires Pillow==2.1.0 to run correctly, and of course Django. Versions from 1.5 up to 1.7 have been tested successfully.
+
+=============
+Configuration
+=============
+
+The required settings you should add in your settings.py are:
+
+    UPLOAD_TO # Temporary upload directory
+    MEDIA_URL # Media path for url files
+    MEDIA_ROOT # Absolute path to media directory
+
+If you want to specify a different directory just for django-image-tools, you can do so by defining
+
+    DJANGO_IMAGE_TOOLS_UPLOAD_DIR
+
+You can also configure the app to use a specific cache dir by defining
+
+    DJANGO_IMAGE_TOOLS_CACHE_DIR
+
+otherwise, the cached images will be put under a 'cache' directory.
+
+
 
 =============
 How to use it

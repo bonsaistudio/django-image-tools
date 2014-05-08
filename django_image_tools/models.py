@@ -20,13 +20,10 @@ import hashlib
 from django.core.exceptions import ValidationError
 from django.core.validators import RegexValidator
 from django.db import models
-from django.conf import settings
 from PIL import Image as PILImage
 import os
 from django.db.models.signals import post_save, post_init, post_delete
-
-if not settings.DJANGO_IMAGE_TOOLS_CACHE_DIRECTORY:
-    settings.DJANGO_IMAGE_TOOLS_CACHE_DIRECTORY = 'CACHE'
+from . import settings
 
 
 class Size(models.Model):
@@ -214,7 +211,7 @@ def delete_sizes_for_image(image):
 
 
 def path_for_image_with_size(image, size):
-    return u'{0}/{1}/{2}'.format(settings.MEDIA_ROOT, settings.DJANGO_IMAGE_TOOLS_CACHE_DIRECTORY,
+    return u'{0}/{1}/{2}'.format(settings.MEDIA_ROOT, settings.DJANGO_IMAGE_TOOLS_CACHE_DIR,
                                  image_with_size(image, size))
 
 
@@ -224,7 +221,7 @@ def media_path_for_image(image):
 
 
 def media_path_for_image_with_size(image, size):
-    return u'{0}{1}/{2}'.format(settings.MEDIA_URL, settings.DJANGO_IMAGE_TOOLS_CACHE_DIRECTORY,
+    return u'{0}{1}/{2}'.format(settings.MEDIA_URL, settings.DJANGO_IMAGE_TOOLS_CACHE_DIR,
                                 image_with_size(image, size))
 
 
