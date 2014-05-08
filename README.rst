@@ -26,7 +26,9 @@ Configuration
 The required settings you should add in your settings.py are:
 
     UPLOAD_TO # Temporary upload directory
+
     MEDIA_URL # Media path for url files
+    
     MEDIA_ROOT # Absolute path to media directory
 
 If you want to specify a different directory just for django-image-tools, you can do so by defining
