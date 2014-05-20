@@ -19,7 +19,6 @@ from __future__ import absolute_import
 from django.core.files import File
 
 from django.test import TestCase
-from .models import Image as ImageWrapper
 from .models import *
 
 
@@ -29,20 +28,17 @@ class SimpleTest(TestCase):
         """
         Add a new image
         """
-        f = open(u'test_resources/Zerg.jpg')
-        image = ImageWrapper(filename=u'test_image', title=u'Test', caption=u'Test', alt_text=u'Test',
-                             credit=u'none.')
-        image.image.save(u'test.jpg', File(f))
-        self.image = image
+        im = PILImage.new('RGB', (100, 50))
+        im.save(u'{0}/{1}/test_input.jpg'.format(settings.MEDIA_ROOT, settings.DJANGO_IMAGE_TOOLS_CACHE_DIR))
+        image = Image(filename=u'test_image', title=u'Test', caption=u'Test', alt_text=u'Test', credit=u'none.')
+        with open(u'{0}/{1}/test_input.jpg'.format(settings.MEDIA_ROOT, settings.DJANGO_IMAGE_TOOLS_CACHE_DIR), 'r') as f:
+            image.image.save(u'testjpg.jpg', File(f))
 
-        f = open(u'test_resources/cone.bmp')
-        imagew = ImageWrapper(filename=u'wasbmp', title=u'Test', caption=u'Test', alt_text=u'Test',
-                              credit=u'none.')
-        imagew.image.save(u'wasbmp.bmp', File(f))
-        self.imagew = imagew
-
-        self.imagepath = u'{0}/test_image.jpg'.format(settings.MEDIA_ROOT)
-        self.imagewpath = u'{0}/wasbmp.jpg'.format(settings.MEDIA_ROOT)
+        im = PILImage.new('RGB', (150, 100))
+        im.save(u'{0}/{1}/test_input_bmp.bmp'.format(settings.MEDIA_ROOT, settings.DJANGO_IMAGE_TOOLS_CACHE_DIR))
+        imagew = Image(filename=u'wasbmp', title=u'Test', caption=u'Test', alt_text=u'Test', credit=u'none.')
+        with open(u'{0}/{1}/test_input_bmp.bmp'.format(settings.MEDIA_ROOT, settings.DJANGO_IMAGE_TOOLS_CACHE_DIR), 'r') as f:
+            imagew.image.save(u'{0}/{1}/testbmp.bmp'.format(settings.MEDIA_ROOT, settings.DJANGO_IMAGE_TOOLS_CACHE_DIR), File(f))
 
         size = Size(name=u'thumbnail', width=30, height=30)
         size.save()
@@ -60,22 +56,28 @@ class SimpleTest(TestCase):
         huge.save()
         self.huge = huge
 
+        bw = Filter(name=u'grey_scaled', filter_type=0)
+        bw.save()
+
+        self.imagepath = u'{0}/test_image.jpg'.format(settings.MEDIA_ROOT)
+        self.imagewpath = u'{0}/wasbmp.jpg'.format(settings.MEDIA_ROOT)
+
     def testCreation(self):
         """
         Test that the saving happened
         """
-        image = ImageWrapper.objects.get(filename=u'test_image')
+        image = Image.objects.get(filename=u'test_image')
         self.assertTrue(os.path.exists(path_for_image(image)))
-        self.assertEqual(ImageWrapper.objects.all().count(), 2) # There should be two images in the db
-        self.assertEqual(ImageWrapper.objects.all()[0].filename, u'test_image')
+        self.assertEqual(Image.objects.all().count(), 2) # There should be two images in the db
+        self.assertEqual(Image.objects.all()[0].filename, u'test_image')
         self.assertEqual(path_for_image(image), self.imagepath)
 
     def testJPGConversion(self):
         """
         Test that the new image has the right name and is in the right directory
         """
-        image = ImageWrapper.objects.get(filename=u'test_image')
-        imagew = ImageWrapper.objects.get(filename=u'wasbmp')
+        image = Image.objects.get(filename=u'test_image')
+        imagew = Image.objects.get(filename=u'wasbmp')
 
         self.assertEqual(path_for_image(image), self.imagepath)
 
@@ -83,16 +85,47 @@ class SimpleTest(TestCase):
         img = PILImage.open(path_for_image(imagew))
         self.assertEqual(img.format, u'JPEG')
 
+
+    def testApplyFilter(self):
+        """
+        Test that applying a filter results in a new image created correctly.
+        """
+        image = Image.objects.get(filename=u'test_image')
+        bw = Filter.objects.get(name=u'grey_scaled')
+
+        if os.path.exists(path_for_image_with_filter_and_size(image, bw, self.size)):
+            os.remove(path_for_image_with_filter_and_size(image, bw, self.size))
+        self.assertFalse(os.path.exists(path_for_image_with_filter_and_size(image, bw, self.size)))
+        self.assertEqual(image.get__grey_scaled__thumbnail,
+                         media_path_for_image_with_filter_and_size(image, bw, self.size))
+        self.assertTrue(os.path.exists(path_for_image_with_filter_and_size(image, bw, self.size)))
+
+
+    def testOriginalFilter(self):
+        """
+        Test that applying a filter results in a new image created correctly.
+        """
+        image = Image.objects.get(filename=u'test_image')
+        bw = Filter.objects.get(name=u'grey_scaled')
+
+        if os.path.exists(path_for_image_with_filter_and_size(image, bw, None)):
+            os.remove(path_for_image_with_filter_and_size(image, bw, None))
+        self.assertFalse(os.path.exists(path_for_image_with_filter_and_size(image, bw, None)))
+        self.assertEqual(image.get__grey_scaled__original,
+                         media_path_for_image_with_filter_and_size(image, bw, None))
+        self.assertTrue(os.path.exists(path_for_image_with_filter_and_size(image, bw, None)))
+
     def testRenaming(self):
         """
         Test that an image can be renamed correctly
         """
-        image = ImageWrapper.objects.get(filename=u'test_image')
+        image = Image.objects.get(filename=u'test_image')
 
         image.filename = u'renamed'
         image.save()
         self.assertTrue(os.path.exists(path_for_image(image)))
         self.assertFalse(os.path.exists(self.imagepath))
+        image = Image.objects.get(filename=u'renamed')
         image.filename = u'test_image'
         image.save()
 
@@ -100,9 +133,9 @@ class SimpleTest(TestCase):
         """
         Now add a simple size, and test that the resizing system works
         """
-        image = ImageWrapper.objects.get(filename=u'test_image')
+        image = Image.objects.get(filename=u'test_image')
 
-        self.assertEqual(image.get_thumbnail(), u'/media/derived/test_image_thumbnail.jpg')
+        self.assertEqual(image.get__thumbnail, u'/media/cache/test_image_thumbnail.jpg')
         self.assertTrue(os.path.exists(path_for_image_with_size(image, self.size)))
 
     def testLazyCreation(self):
@@ -112,8 +145,8 @@ class SimpleTest(TestCase):
         self.size.width = 250
         self.size.height = 250
         self.size.save()
-        image = ImageWrapper.objects.all()[0]
-        self.assertEqual(image.get_thumbnail(), u'/media/derived/test_image_thumbnail.jpg')
+        image = Image.objects.all()[0]
+        self.assertEqual(image.get__thumbnail, u'/media/cache/test_image_thumbnail.jpg')
         self.assertTrue(os.path.exists(path_for_image_with_size(image, self.size)))
 
         img = PILImage.open(path_for_image_with_size(image, self.size))
@@ -123,33 +156,41 @@ class SimpleTest(TestCase):
         """
         Test that renaming another image with the same name of an existing one will trigger an exception
         """
-        image = ImageWrapper.objects.get(filename=u'test_image')
-        image2 = ImageWrapper.objects.get(filename=u'wasbmp')
+        image = Image.objects.get(filename=u'test_image')
+        image2 = Image.objects.get(filename=u'wasbmp')
         image2.filename = image.filename
         self.assertRaises(ValidationError, image2.save)
 
     def test_unicode(self):
         self.assertEqual(self.size.__unicode__(), u'thumbnail - (30, 30)')
 
+    def test_reserved_keywords_in_size(self):
+        error_causing = Size(name=u'huge__with_double_underscore', width=2000, height=2000)
+        self.assertRaises(ValidationError, error_causing.save)
+
+    def test_reserved_keywords_in_filters(self):
+        error_causing = Filter(name=u'huge__with_double_underscore')
+        self.assertRaises(ValidationError, error_causing.save)
+
     def test_thumbnail(self):
-        image = ImageWrapper.objects.get(filename=u'test_image')
+        image = Image.objects.get(filename=u'test_image')
         # When there IS a thumbnail, the code should be this
-        self.assertEqual(image.thumbnail(), u'<img src="/media/derived/test_image_thumbnail.jpg" width="100" height="100" />')
+        self.assertEqual(image.thumbnail(), u'<img src="/media/cache/test_image_thumbnail.jpg" width="100" height="100" />')
         self.size.delete()
-        image = ImageWrapper.objects.get(filename=u'test_image')
+        image = Image.objects.get(filename=u'test_image')
         self.assertEqual(image.thumbnail(), u'<img src="/media/test_image.jpg" width="100" height="100" />')
 
     def test_title(self):
-        image = ImageWrapper.objects.get(filename=u'test_image')
+        image = Image.objects.get(filename=u'test_image')
         self.assertEqual(image.__unicode__(), u'Test')
 
     def test_weird_sizes(self):
-        image = ImageWrapper.objects.get(filename=u'test_image')
-        self.assertEqual(image.get_very_long(), media_path_for_image_with_size(image, self.long))
+        image = Image.objects.get(filename=u'test_image')
+        self.assertEqual(image.get__very_long, media_path_for_image_with_size(image, self.long))
         img = PILImage.open(path_for_image_with_size(image, self.long))
         self.assertTrue(img.size[0] == self.long.width and img.size[1] == self.long.height)
 
-        self.assertEqual(image.get_very_tall(), media_path_for_image_with_size(image, self.tall))
+        self.assertEqual(image.get__very_tall, media_path_for_image_with_size(image, self.tall))
         img = PILImage.open(path_for_image_with_size(image, self.tall))
         self.assertTrue(img.size[0] == self.tall.width and img.size[1] == self.tall.height)
 
@@ -157,21 +198,25 @@ class SimpleTest(TestCase):
         """
         Test that when an image is upscaled, the info is saved onto the db
         """
-        image = ImageWrapper.objects.get(filename=u'test_image')
+        image = Image.objects.get(filename=u'test_image')
         self.assertFalse(image.was_upscaled)
-        self.assertEqual(image.get_huge(), media_path_for_image_with_size(image, self.huge))
+        self.assertEqual(image.get__huge, media_path_for_image_with_size(image, self.huge))
         # Now the image was upscaled, so the flag should be true
-        image = ImageWrapper.objects.get(filename=u'test_image')
+        image = Image.objects.get(filename=u'test_image')
         self.assertTrue(image.was_upscaled)
 
     def tearDown(self):
         """
         Cleaning up what was created...
         """
-        image = ImageWrapper.objects.get(filename=u'test_image')
-        imagew = ImageWrapper.objects.get(filename=u'wasbmp')
+        image = Image.objects.get(filename=u'test_image')
+        imagew = Image.objects.get(filename=u'wasbmp')
         image.delete()
         imagew.delete()
+        if os.path.exists(u'{0}/{1}/test_input.jpg'.format(settings.MEDIA_ROOT, settings.DJANGO_IMAGE_TOOLS_CACHE_DIR)):
+            os.remove(u'{0}/{1}/test_input.jpg'.format(settings.MEDIA_ROOT, settings.DJANGO_IMAGE_TOOLS_CACHE_DIR))
+        if os.path.exists(u'{0}/{1}/test_input_bmp.bmp'.format(settings.MEDIA_ROOT, settings.DJANGO_IMAGE_TOOLS_CACHE_DIR)):
+            os.remove(u'{0}/{1}/test_input_bmp.bmp'.format(settings.MEDIA_ROOT, settings.DJANGO_IMAGE_TOOLS_CACHE_DIR))
         if self.size.pk is not None:
             self.size.delete()
         os.remove(path_for_image(image))

@@ -20,12 +20,15 @@ import hashlib
 from django.core.exceptions import ValidationError
 from django.core.validators import RegexValidator
 from django.db import models
-from django.conf import settings
 from PIL import Image as PILImage
 import os
 from django.db.models.signals import post_save, post_init, post_delete
+from . import settings
 
-settings.configure(DJANGO_IMAGE_TOOLS_CACHE_DIRECTORY='cache')
+PARAMS_SEPARATOR = u'__'
+FUNCTION_PREFIX = u'get{0}'.format(PARAMS_SEPARATOR)
+ORIGINAL_KEYWORD = u'original'
+
 
 
 class Size(models.Model):
@@ -35,6 +38,33 @@ class Size(models.Model):
 
     def __unicode__(self):
         return u'{0} - ({1}, {2})'.format(self.name, self.width, self.height)
+
+    def save(self, force_insert=False, force_update=False, using=None,
+             update_fields=None):
+        if PARAMS_SEPARATOR in self.name:
+            raise ValidationError(u'Sorry. Your name cannot contain the string \'{sep}\','
+                                  u' as it is reserved for internal purposes'.format(sep=PARAMS_SEPARATOR))
+        super(Size, self).save(force_insert, force_update, using, update_fields)
+
+
+class Filter(models.Model):
+    GREY_SCALE = 0
+    available_filters = (
+        (GREY_SCALE, 'Grey scale'),
+    )
+    name = models.CharField(max_length=30)
+
+    filter_type = models.PositiveSmallIntegerField(choices=available_filters, help_text=u'The type of filter to apply')
+
+    def __unicode__(self):
+        return self.name
+
+    def save(self, force_insert=False, force_update=False, using=None,
+             update_fields=None):
+        if PARAMS_SEPARATOR in self.name:
+            raise ValidationError(u'Sorry. Your name cannot contain the string \'{sep}\','
+                                  u' as it is reserved for internal purposes'.format(sep=PARAMS_SEPARATOR))
+        super(Filter, self).save(force_insert, force_update, using, update_fields)
 
 
 class Image(models.Model):
@@ -57,29 +87,29 @@ class Image(models.Model):
     filename = models.SlugField(help_text=u'If you want to rename the image, write here the new filename',
                                 validators=[RegexValidator(regex=r'^[A-Za-z\-\_0-9]*$',
                                                           message=u'Filename can only contain letters, '
-                                                                  'numbers and \'-\'.'
-                                                                  'No extensions allowed (I\'ll put it for you'), ]
+                                                                  u'numbers and \'-\'.'
+                                                                  u'No extensions allowed (I\'ll put it for you'), ]
     )
     subject_position_horizontal = models.PositiveSmallIntegerField(choices=choices_H,
                                                                    default=2,
                                                                    verbose_name=u'Subject Horizontal Position',
                                                                    help_text=u'The system will create other images'
-                                                                             'from this, based on the '
-                                                                             'image sizes needed.'
-                                                                             'In some cases, it is necessary to crop'
-                                                                             'the image. By selecting where the '
-                                                                             'subject is, the cropping'
-                                                                             'can be more accurate.')
+                                                                             u'from this, based on the '
+                                                                             u'image sizes needed.'
+                                                                             u'In some cases, it is necessary to crop'
+                                                                             u'the image. By selecting where the '
+                                                                             u'subject is, the cropping'
+                                                                             u'can be more accurate.')
     subject_position_vertical = models.PositiveSmallIntegerField(choices=choices_V,
                                                                  default=2,
                                                                  verbose_name=u'Subject Vertical Position',
                                                                  help_text=u'The system will create other images'
-                                                                           'from this, based on the '
-                                                                           'image sizes needed.'
-                                                                           'In some cases, it is necessary to crop'
-                                                                           'the image. By selecting where the '
-                                                                           'subject is, the cropping'
-                                                                           'can be more accurate.')
+                                                                           u'from this, based on the '
+                                                                           u'image sizes needed.'
+                                                                           u'In some cases, it is necessary to crop'
+                                                                           u'the image. By selecting where the '
+                                                                           u'subject is, the cropping'
+                                                                           u'can be more accurate.')
     was_upscaled = models.BooleanField(default=False, verbose_name=u'insufficient_resolution')
 
     title = models.CharField(max_length=120,
@@ -87,18 +117,18 @@ class Image(models.Model):
     caption = models.TextField()
     alt_text = models.CharField(max_length=120,
                                 help_text=u'This is the text that allows blind people (and google) know '
-                                          'what the image is about ')
+                                          u'what the image is about ')
 
     credit = models.TextField(null=True, blank=True)
 
     def thumbnail(self):
-        if hasattr(self, u'get_thumbnail'):
+        if hasattr(self, u'get__thumbnail'):
             return u'<img src="{thumbnail_path}" width="100" height="100" />'.format(
-                thumbnail_path=self.get_thumbnail()
+                thumbnail_path=self.get__thumbnail
             )
         else:
             return u'<img src="{thumbnail_path}" width="100" height="100" />'.format(
-                thumbnail_path=self.get_original()
+                thumbnail_path=self.get__original
             )
     thumbnail.allow_tags = True
 
@@ -110,10 +140,64 @@ class Image(models.Model):
     def __unicode__(self):
         return self.title
 
+    def __getattribute__(self, name):
+        try:
+            attr = super(Image, self).__getattribute__(name)
+            return attr
+        except AttributeError:
+            if name[0:len(FUNCTION_PREFIX)] == FUNCTION_PREFIX:
+                params = name[len(FUNCTION_PREFIX):].split(PARAMS_SEPARATOR)
+                if len(params) > 2:
+                    raise NotImplementedError(u'Multiple filters are not yet implemented')
+                else:
+                    if len(params) == 1:
+                        """
+                        If there's only one parameter, it's the size. Check if the size exists
+                        """
+                        size = None
+                        if params[0] != ORIGINAL_KEYWORD:
+                            try:
+                                size = Size.objects.get(name=params[0])
+                            except Size.DoesNotExist:
+                                raise Size.DoesNotExist(u'One of your templates requested the \'{name}\' '
+                                                        u'method to django_image_tools, but I couldn\'t find any size named'
+                                                        u' \'{sizename}\''.format(name=name, sizename=params[0]))
+                        """
+                        Return the requested size
+                        """
+                        return get_image_on_request(self, size)
+                    else:
+                        """
+                        Exactly two parameters. This means that the first one is a filter and the second one is a size.
+                        """
+                        try:
+                            image_filter = Filter.objects.get(name=params[0])
+                        except Filter.DoesNotExist:
+                            raise Filter.DoesNotExist(u'One of your templates requested the \'{name}\' '
+                                                      u'method to django_image_tools, but I couldn\'t find '
+                                                      u'any filter named'
+                                                      u' \'{filtername}\''.format(name=name,filtername=params[0]))
+                        size = None
+                        if params[1] != ORIGINAL_KEYWORD:
+                            try:
+                                size = Size.objects.get(name=params[1])
+                            except Size.DoesNotExist:
+                                raise Size.DoesNotExist(u'One of your templates requested the \'{name}\' '
+                                                        u'method to django_image_tools, but I couldn\'t find any '
+                                                        u'size named'
+                                                        u' \'{sizename}\''.format(name=name, sizename=params[1]))
+
+                        """
+                        Return the appropriate filter and size.
+                        """
+                        return get_image_with_filter_and_size(self, image_filter, size)
+            else:
+                super(models.Model, self).__getattribute__(name)
+
     def save(self, force_insert=False, force_update=False, using=None,
              update_fields=None):
         if os.path.exists(path_for_image(self)) and md5Checksum(path_for_image(self)) != self.checksum:
-            raise ValidationError('An image with the same name already exists!')
+            raise ValidationError(u'An image with the same name already exists!')
         super(Image, self).save(force_insert=force_insert,
                                 force_update=force_update, using=using, update_fields=update_fields)
 
@@ -148,22 +232,22 @@ def rescale_image(img, nsize, crop_point):
 
     new_width, new_height = (float(nsize[0]), float(nsize[1]))
 
-    print('Original size is ({0}, {1}), resizing to ({2}, {3})'.format(osize[0], osize[1], nsize[0], nsize[1]))
+    print(u'Original size is ({0}, {1}), resizing to ({2}, {3})'.format(osize[0], osize[1], nsize[0], nsize[1]))
 
     original_ratio = original_width/original_height
     new_ratio = new_width/new_height
 
-    print('Original ratio is {0}, new ratio is {1}'.format(original_ratio, new_ratio))
+    print(u'Original ratio is {0}, new ratio is {1}'.format(original_ratio, new_ratio))
 
     if original_ratio < new_ratio:
         #Resize by height
-        print('Considering new height as base')
+        print(u'Considering new height as base')
         first_step_height = original_width/new_ratio
         first_step_width = original_width
         first_step_size = (first_step_width,first_step_height)
     else:
         #Resize by width
-        print('Considering new Width as base')
+        print(u'Considering new Width as base')
         first_step_width = new_ratio*original_height
         first_step_height = original_height
         first_step_size = (first_step_width, first_step_height)
@@ -199,7 +283,13 @@ def rescale_image(img, nsize, crop_point):
 def delete_image_with_size(image, size):
     path = path_for_image_with_size(image, size)
     if os.path.exists(path):
-        os.remove(path_for_image_with_size(image, size))
+        os.remove(path)
+
+
+def delete_image_with_filter_and_size(image, im_filter, size):
+    path = path_for_image_with_filter_and_size(image, im_filter, size)
+    if os.path.exists(path):
+        os.remove(path)
 
 
 def delete_images_for_size(size):
@@ -210,10 +300,25 @@ def delete_images_for_size(size):
 def delete_sizes_for_image(image):
     for size in Size.objects.all():
         delete_image_with_size(image, size)
+        for im_filter in Filter.objects.all():
+            delete_image_with_filter_and_size(image, im_filter, size)
+
+
+def delete_filters_for_image(image):
+    for size in Size.objects.all():
+        for im_filter in Filter.objects.all():
+            delete_image_with_filter_and_size(image, im_filter, size)
+
+
+def path_for_image_with_filter_and_size(image, im_filter, size):
+    return u'{0}/{1}/{2}'.format(settings.MEDIA_ROOT, settings.DJANGO_IMAGE_TOOLS_CACHE_DIR,
+                                 image_with_filter_and_size(image, im_filter, size))
 
 
 def path_for_image_with_size(image, size):
-    return u'{0}/{1}/{2}'.format(settings.MEDIA_ROOT, settings.DJANGO_IMAGE_TOOLS_CACHE_DIRECTORY,
+    if size is None:
+        return path_for_image(image)
+    return u'{0}/{1}/{2}'.format(settings.MEDIA_ROOT, settings.DJANGO_IMAGE_TOOLS_CACHE_DIR,
                                  image_with_size(image, size))
 
 
@@ -223,12 +328,17 @@ def media_path_for_image(image):
 
 
 def media_path_for_image_with_size(image, size):
-    return u'{0}{1}/{2}'.format(settings.MEDIA_URL, settings.DJANGO_IMAGE_TOOLS_CACHE_DIRECTORY,
+    return u'{0}{1}/{2}'.format(settings.MEDIA_URL, settings.DJANGO_IMAGE_TOOLS_CACHE_DIR,
                                 image_with_size(image, size))
 
 
+def media_path_for_image_with_filter_and_size(image_object, im_filter, size):
+    return u'{0}{1}/{2}'.format(settings.MEDIA_URL, settings.DJANGO_IMAGE_TOOLS_CACHE_DIR,
+                                image_with_filter_and_size(image_object, im_filter, size))
+
+
 def current_path_for_image(imageObject):
-    return imageObject.image.name
+    return imageObject.image.file.name
 
 
 def path_for_image(imageObject, force_extension=None):
@@ -241,6 +351,15 @@ def path_for_image(imageObject, force_extension=None):
 def image_with_size(image, size):
     filename, extension = os.path.splitext(os.path.basename(image.image.name))
     return u'{0}_{1}{2}'.format(filename, size.name, extension)
+
+
+def image_with_filter_and_size(image, im_filter, size):
+    # If size is None, then we're fetching the original.
+    sizename = 'original'
+    if size is not None:
+        sizename = size.name
+    filename, extension = os.path.splitext(os.path.basename(image.image.name))
+    return u'{0}_{1}_{2}{3}'.format(filename, im_filter.name, sizename, extension)
 
 
 def render_image_with_size(imageObject, size):
@@ -258,6 +377,19 @@ def render_image_with_size(imageObject, size):
     resizedImage.save(image_path)
 
 
+def render_image_with_filter_and_size(image_object, im_filter, size):
+    if not os.path.exists(path_for_image_with_size(image_object, size)):
+        render_image_with_size(image_object, size)
+    pil_image = PILImage.open(path_for_image_with_size(image_object, size))
+    # Check which filter to apply:
+    if im_filter.filter_type == Filter.GREY_SCALE:
+        # Apply greyscale
+        pil_image = pil_image.convert('LA').convert('RGB')
+        pil_image.save(path_for_image_with_filter_and_size(image_object, im_filter, size))
+    else:
+        raise NotImplementedError
+
+
 def convert_to_png(sender, **kwargs):
     # the object which is saved can be accessed via kwargs 'instance' key.
     imageObject = kwargs['instance']
@@ -268,7 +400,7 @@ def convert_to_png(sender, **kwargs):
         # If there's already an image with the same name, check the checksum
         if not md5Checksum(path_for_image(imageObject)) == imageObject.checksum:
             # The images are different. Cannot rename, raise an exception
-            raise ValidationError('There is already an image with the same name')
+            raise ValidationError(u'There is already an image with the same name')
 
     #Remove old image
     os.remove(current_path_for_image(imageObject))
@@ -292,6 +424,8 @@ def convert_to_png(sender, **kwargs):
 
 
 def get_image_on_request(image_object, size):
+    if size is None:
+        return media_path_for_image(image_object)
     path = path_for_image_with_size(image_object, size)
 
     if not os.path.exists(path) or image_object.checksum != md5Checksum(path_for_image(image_object)):
@@ -299,18 +433,12 @@ def get_image_on_request(image_object, size):
     return media_path_for_image_with_size(image_object, size)
 
 
-def add_size_urls_to_image(sender, **kwargs):
-   # the object which is saved can be accessed via kwargs 'instance' key.
-    imageObject = kwargs['instance']
-
-    # Add a way to obtain the original path
-
-    setattr(imageObject, u'get_original', lambda: media_path_for_image(imageObject))
-
-    for size in Size.objects.all():
-        #Check if file exists
-        setattr(imageObject, u'get_{0}'.format(size.name),
-                (lambda x, y: lambda: get_image_on_request(x, y))(imageObject, size))
+def get_image_with_filter_and_size(image_object, im_filter, size):
+    # First of all, check if it exists
+    path = path_for_image_with_filter_and_size(image_object, im_filter, size)
+    if not os.path.exists(path):
+        render_image_with_filter_and_size(image_object, im_filter, size)
+    return media_path_for_image_with_filter_and_size(image_object, im_filter, size)
 
 
 def delete_images_with_size(sender, **kwargs):
@@ -319,10 +447,10 @@ def delete_images_with_size(sender, **kwargs):
 
 def delete_all_sizes_of_image(sender, **kwargs):
     delete_sizes_for_image(kwargs['instance'])
+    delete_filters_for_image(kwargs['instance'])
 
 
 post_save.connect(convert_to_png, Image)
-post_init.connect(add_size_urls_to_image, Image)
 post_delete.connect(delete_images_with_size, Size)
 post_delete.connect(delete_all_sizes_of_image, Image)
 post_save.connect(delete_images_with_size, Size)

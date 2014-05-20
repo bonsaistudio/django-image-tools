@@ -17,7 +17,7 @@
 
 from __future__ import absolute_import
 from django.contrib import admin
-from .models import Image, Size
+from .models import Image, Size, Filter
 
 class ImageAdmin(admin.ModelAdmin):
     exclude = ('was_upscaled', 'checksum')
@@ -30,4 +30,5 @@ class ImageAdmin(admin.ModelAdmin):
 
 admin.site.register(Image, ImageAdmin)
 admin.site.register(Size)
+admin.site.register(Filter)
 
