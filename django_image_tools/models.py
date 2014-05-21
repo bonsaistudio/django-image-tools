@@ -49,8 +49,10 @@ class Size(models.Model):
 
 class Filter(models.Model):
     GREY_SCALE = 0
+    GAUSSIAN_BLUR = 1
     available_filters = (
         (GREY_SCALE, 'Grey scale'),
+        (GAUSSIAN_BLUR, 'Gaussian Blur'),
     )
     name = models.CharField(max_length=30)
 
@@ -60,12 +62,12 @@ class Filter(models.Model):
     def __unicode__(self):
         return self.name
 
-    def save(self, force_insert=False, force_update=False, using=None,
-             update_fields=None):
+    def clean(self):
         if PARAMS_SEPARATOR in self.name:
             raise ValidationError(u'Sorry. Your name cannot contain the string \'{sep}\','
                                   u' as it is reserved for internal purposes'.format(sep=PARAMS_SEPARATOR))
-        super(Filter, self).save(force_insert, force_update, using, update_fields)
+        if self.filter_type == self.GAUSSIAN_BLUR and self.numeric_parameter is None:
+            raise ValidationError(u'Gaussian Blur needs the parameter to be specified')
 
 
 class Image(models.Model):
@@ -296,6 +298,8 @@ def delete_image_with_filter_and_size(image, im_filter, size):
 def delete_images_for_size(size):
     for image in Image.objects.all():
         delete_image_with_size(image, size)
+        for im_filter in Filter.objects.all():
+            delete_image_with_filter_and_size(image, im_filter, size)
 
 
 def delete_sizes_for_image(image):
@@ -303,6 +307,12 @@ def delete_sizes_for_image(image):
         delete_image_with_size(image, size)
         for im_filter in Filter.objects.all():
             delete_image_with_filter_and_size(image, im_filter, size)
+
+
+def delete_images_for_filter(im_filter):
+    for size in Size.objects.all():
+        for image_object in Image.objects.all():
+            delete_image_with_filter_and_size(image_object, im_filter, size)
 
 
 def delete_filters_for_image(image):
@@ -389,6 +399,7 @@ def gaussian_blur(image_object, im_filter, size):
     #Open image
     pil_image = PILImage.open(path_for_image_with_size(image_object, size))
     #Apply filter
+    # Gaussian blur gets the numeric parameter as the radius.
     pil_image = pil_image.filter(ImageFilter.GaussianBlur(im_filter.numeric_parameter))
     #Save image to its correct path
     pil_image.save(path_for_image_with_filter_and_size(image_object, im_filter, size))
@@ -398,10 +409,11 @@ def render_image_with_filter_and_size(image_object, im_filter, size):
     if not os.path.exists(path_for_image_with_size(image_object, size)):
         render_image_with_size(image_object, size)
     # Check which filter to apply:
-    image_filters = {0: grey_scale,
-                     1: gaussian_blur,
-                     }
-    image_filters[im_filter.filter_type]()
+    image_filters = {
+        Filter.GREY_SCALE: grey_scale,
+        Filter.GAUSSIAN_BLUR: gaussian_blur,
+    }
+    image_filters[im_filter.filter_type](image_object, im_filter, size)
 
 
 def convert_to_png(sender, **kwargs):
@@ -458,6 +470,9 @@ def get_image_with_filter_and_size(image_object, im_filter, size):
 def delete_images_with_size(sender, **kwargs):
     delete_images_for_size(kwargs['instance'])
 
+def delete_images_with_filter(sender, **kwargs):
+    delete_images_for_filter(kwargs['instance'])
+
 
 def delete_all_sizes_of_image(sender, **kwargs):
     delete_sizes_for_image(kwargs['instance'])
@@ -468,3 +483,4 @@ post_save.connect(convert_to_png, Image)
 post_delete.connect(delete_images_with_size, Size)
 post_delete.connect(delete_all_sizes_of_image, Image)
 post_save.connect(delete_images_with_size, Size)
+post_save.connect(delete_images_with_filter, Filter)

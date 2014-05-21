@@ -1,7 +1,7 @@
 from distutils.core import setup
 
 setup(name='django-image-tools',
-      version='0.6.b',
+      version='0.6.1.b',
       description='Image tools for Django',
       author='Bonsai Studio',
       author_email='info@bonsai-studio.net',
