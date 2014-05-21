@@ -20,7 +20,7 @@ import hashlib
 from django.core.exceptions import ValidationError
 from django.core.validators import RegexValidator
 from django.db import models
-from PIL import Image as PILImage
+from PIL import Image as PILImage, ImageFilter
 import os
 from django.db.models.signals import post_save, post_init, post_delete
 from . import settings
@@ -55,6 +55,7 @@ class Filter(models.Model):
     name = models.CharField(max_length=30)
 
     filter_type = models.PositiveSmallIntegerField(choices=available_filters, help_text=u'The type of filter to apply')
+    numeric_parameter = models.FloatField(verbose_name=u'Numeric Parameter', null=True, blank=True)
 
     def __unicode__(self):
         return self.name
@@ -377,17 +378,30 @@ def render_image_with_size(imageObject, size):
     resizedImage.save(image_path)
 
 
+def grey_scale(image_object, im_filter, size):
+    # Apply greyscale
+    pil_image = PILImage.open(path_for_image_with_size(image_object, size))
+    pil_image = pil_image.convert('LA').convert('RGB')
+    pil_image.save(path_for_image_with_filter_and_size(image_object, im_filter, size))
+
+
+def gaussian_blur(image_object, im_filter, size):
+    #Open image
+    pil_image = PILImage.open(path_for_image_with_size(image_object, size))
+    #Apply filter
+    pil_image = pil_image.filter(ImageFilter.GaussianBlur(im_filter.numeric_parameter))
+    #Save image to its correct path
+    pil_image.save(path_for_image_with_filter_and_size(image_object, im_filter, size))
+
+
 def render_image_with_filter_and_size(image_object, im_filter, size):
     if not os.path.exists(path_for_image_with_size(image_object, size)):
         render_image_with_size(image_object, size)
-    pil_image = PILImage.open(path_for_image_with_size(image_object, size))
     # Check which filter to apply:
-    if im_filter.filter_type == Filter.GREY_SCALE:
-        # Apply greyscale
-        pil_image = pil_image.convert('LA').convert('RGB')
-        pil_image.save(path_for_image_with_filter_and_size(image_object, im_filter, size))
-    else:
-        raise NotImplementedError
+    image_filters = {0: grey_scale,
+                     1: gaussian_blur,
+                     }
+    image_filters[im_filter.filter_type]()
 
 
 def convert_to_png(sender, **kwargs):

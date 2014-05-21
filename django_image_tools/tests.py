@@ -22,17 +22,30 @@ from django.test import TestCase
 from .models import *
 
 
+def create_dummy_image(filename=u'Test_image', title=u'Title', caption=u'Caption', alt_text=u'Alt Text',
+                       credit=u'Credit'):
+    im = PILImage.new('RGB', (100, 50))
+    im.save(u'{0}/{1}/test_input.jpg'.format(settings.MEDIA_ROOT, settings.DJANGO_IMAGE_TOOLS_CACHE_DIR))
+    image = Image(filename=filename, title=title, caption=caption, alt_text=alt_text, credit=credit)
+    with open(u'{0}/{1}/test_input.jpg'.format(settings.MEDIA_ROOT, settings.DJANGO_IMAGE_TOOLS_CACHE_DIR), 'r') as f:
+        image.image.save(u'testjpg.jpg', File(f))
+    return image
+
+
+def delete_image(image_object):
+    if os.path.exists(path_for_image(image_object)):
+        os.remove(path_for_image(image_object))
+    image_object.delete()
+
+
 class SimpleTest(TestCase):
 
     def setUp(self):
         """
         Add a new image
         """
-        im = PILImage.new('RGB', (100, 50))
-        im.save(u'{0}/{1}/test_input.jpg'.format(settings.MEDIA_ROOT, settings.DJANGO_IMAGE_TOOLS_CACHE_DIR))
-        image = Image(filename=u'test_image', title=u'Test', caption=u'Test', alt_text=u'Test', credit=u'none.')
-        with open(u'{0}/{1}/test_input.jpg'.format(settings.MEDIA_ROOT, settings.DJANGO_IMAGE_TOOLS_CACHE_DIR), 'r') as f:
-            image.image.save(u'testjpg.jpg', File(f))
+
+        create_dummy_image('testjpg', 'Test', 'Test', 'Test', 'None')
 
         im = PILImage.new('RGB', (150, 100))
         im.save(u'{0}/{1}/test_input_bmp.bmp'.format(settings.MEDIA_ROOT, settings.DJANGO_IMAGE_TOOLS_CACHE_DIR))

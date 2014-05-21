@@ -77,6 +77,11 @@ We believe this will save some time looking at the docs of an app trying to figu
 should include, how to input your parameters, etc...
 
 
+Include it in your models
+-------------------------
+
+Nothing more simple. Just import the 'Image' model in your models.py file and create a Foreign Key to it. Done!
+
 Syntax
 ------
 
@@ -200,3 +205,55 @@ I also *strongly* advice you to remove permission for non admin users for the 's
 If there is a 'thumbnail' size, the app will display images of that size for the admin panel, otherwise it will fall back on the original.
 
 You can fetch the original image path by requesting 'image.get__original'.
+
+
+=======
+Testing
+=======
+
+Often times you will find yourself having images required in your models, and testing these models can be a real pain in the
+donkey as you will have to create images just for that.
+
+We want to make things simple for you, so you can import our method 'create_dummy_image' to easily create a dummy image for your tests!
+
+::
+
+    create_dummy_image(filename=u'Test_image', title=u'Title', caption=u'Caption', alt_text=u'Alt Text',
+                       credit=u'Credit'):
+
+
+This will create a new dummy entry in the database, so all you have to do is to assign it to your model's Foreign Key.
+
+Remember to call
+
+::
+
+    image.delete()
+
+
+In your tearDown.
+
+Also, django_image_tools will never delete your images, so you will have to delete them yourself.
+Just kidding, we made a script for that too.
+
+::
+
+    delete_image(image)
+
+
+
+So, here's a complete script.
+
+::
+    def setUp(self):
+        partnerImage = create_dummy_image()
+        model_with_image = Model(name=u'Coca cola', image=partnerImage)
+        partner.save()
+
+    def testInsert(self):
+        self.assertEqual(Model.objects.all()[0].name, 'Coca cola')
+
+    def tearDown(self):
+        model_with_image = Model.objects.all()[0]
+        delete_image(model_with_image.image)
+        model_with_image.delete()
