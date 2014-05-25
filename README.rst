@@ -17,9 +17,13 @@ Installation
 
 All you have to do is 
 
+::
+
     pip install django-image-tools
 
 and of course, install in your INSTALLED_APPS as
+
+::
 
     django_image_tools
 
@@ -31,6 +35,8 @@ Configuration
 
 The required settings you should add in your settings.py are:
 
+::
+
     UPLOAD_TO # Temporary upload directory
 
     MEDIA_URL # Media path for url files
@@ -39,9 +45,13 @@ The required settings you should add in your settings.py are:
 
 If you want to specify a different directory just for django-image-tools, you can do so by defining
 
+::
+
     DJANGO_IMAGE_TOOLS_UPLOAD_DIR
 
 You can also configure the app to use a specific cache dir by defining
+
+::
 
     DJANGO_IMAGE_TOOLS_CACHE_DIR
 
@@ -88,7 +98,7 @@ Syntax
 We tried to make the syntax as readable and intuitive as possible.
 Filter names should be applied before size names. Size names are mandatory.
 
-To activate django_image_tools, you need to call a 'get__' attribute on the image.
+To activate django_image_tools, you need to call a ``get__`` attribute on the image.
 
 For example, if you want a 'thumbnail', you should define a new Size called 'thumbnail' on the admin panel.
 Then, in your templates you should use:
@@ -123,13 +133,15 @@ The options for each size are:
 - Height (auto)
 
 All of the sizes you create will be available for the images the user will upload through its name.
-For example, you can have a 'thumbnail' 250x250 size, and every image you upload will have the 'get__thumbnail' method that will output the path for the image with the requested size.
+For example, you can have a 'thumbnail' 250x250 size, and every image you upload will have the ``get__thumbnail`` method that will output the path for the image with the requested size.
 
 Having 'auto' height, for exmaple, means that the image will be resized to match the given width, and keep the original aspect ratio (This is useful for example, if you want to create a *pinterest* board).
 
 Of course, you can only have auto height or auto width, and not both.
 
 In the template, to display an image field, all you have to do is:
+
+::
 
     <img src='{{ some_image.get__thumbnail }}' alt_text='{{ some_image.alt_text }}' />
 
@@ -245,6 +257,7 @@ Just kidding, we made a script for that too.
 So, here's a complete script.
 
 ::
+
     def setUp(self):
         partnerImage = create_dummy_image()
         model_with_image = Model(name=u'Coca cola', image=partnerImage)
