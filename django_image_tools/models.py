@@ -21,9 +21,9 @@ import os
 from django.db.models.signals import post_save, post_init, post_delete
 from . import settings
 
-PARAMS_SEPARATOR = u'__'
-FUNCTION_PREFIX = u'get{0}'.format(PARAMS_SEPARATOR)
-ORIGINAL_KEYWORD = u'original'
+PARAMS_SEPARATOR = '__'
+FUNCTION_PREFIX = 'get{0}'.format(PARAMS_SEPARATOR)
+ORIGINAL_KEYWORD = 'original'
 
 
 
@@ -34,6 +34,12 @@ class Size(models.Model):
 
     def __unicode__(self):
         return u'{0} - ({1}, {2})'.format(self.name, self.width, self.height)
+
+    def clean(self):
+        if PARAMS_SEPARATOR in self.name:
+            raise ValidationError(u'Sorry. Your name cannot contain the string \'{sep}\','
+                                  u' as it is reserved for internal purposes'.format(sep=PARAMS_SEPARATOR))
+        super(Size, self).save(force_insert, force_update, using, update_fields)
 
     def save(self, force_insert=False, force_update=False, using=None,
              update_fields=None):
@@ -64,6 +70,13 @@ class Filter(models.Model):
                                   u' as it is reserved for internal purposes'.format(sep=PARAMS_SEPARATOR))
         if self.filter_type == self.GAUSSIAN_BLUR and self.numeric_parameter is None:
             raise ValidationError(u'Gaussian Blur needs the parameter to be specified')
+
+    def save(self, force_insert=False, force_update=False, using=None,
+             update_fields=None):
+        if PARAMS_SEPARATOR in self.name:
+            raise ValidationError(u'Sorry. Your name cannot contain the string \'{sep}\','
+                                  u' as it is reserved for internal purposes'.format(sep=PARAMS_SEPARATOR))
+        super(Filter, self).save(force_insert, force_update, using, update_fields)
 
 
 class Image(models.Model):

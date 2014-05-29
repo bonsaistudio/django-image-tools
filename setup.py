@@ -16,5 +16,8 @@ setup(name='django-image-tools',
           'License :: OSI Approved :: BSD License',
           'Programming Language :: Python',
       ],
+      install_requires = [
+        'Pillow', 
+      ],
       packages=['django_image_tools', 'django_image_tools.migrations'],
       )

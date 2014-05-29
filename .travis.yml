@@ -1,0 +1,38 @@
+language: python
+python:
+  - 2.5
+  - 2.6
+  - 2.7
+  - 3.2
+  - 3.3
+  - pypy
+env:
+  - DJANGO=1.4.0
+  - DJANGO=1.4.5
+  - DJANGO=1.5
+before_install:
+  - export DJANGO_SETTINGS_MODULE=django_image_tools.tests.settings
+install:
+  - pip install -q Django==$DJANGO --use-mirrors
+  - pip install Pillow --use-mirrors
+  - pip install . --use-mirrors
+script:
+  - python manage.py syncdb && python manage.py test django_image_tools
+matrix:
+  exclude:
+    # Django doesn't support following combinations
+    - python: 2.5
+      env: DJANGO=1.5
+    - python: 3.2
+      env: DJANGO=1.4.0
+    - python: 3.2
+      env: DJANGO=1.4.5
+    - python: 3.3
+      env: DJANGO=1.4.0
+    - python: 3.3
+      env: DJANGO=1.4.5
+
+    # Fails. Django issue #19944
+    # https://code.djangoproject.com/ticket/19944
+    - python: pypy
+      env: DJANGO=1.5
