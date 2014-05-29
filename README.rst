@@ -27,7 +27,8 @@ and of course, install in your INSTALLED_APPS as
 
     django_image_tools
 
-It requires Pillow==2.1.0 to run correctly, and of course Django. Versions from 1.5 up to 1.7 have been tested successfully.
+
+Django Image tools requires Pillow in order to work correctly.
 
 =============
 Configuration
@@ -38,8 +39,6 @@ The required settings you should add in your settings.py are:
 ::
 
     UPLOAD_TO # Temporary upload directory
-
-    MEDIA_URL # Media path for url files
 
     MEDIA_ROOT # Absolute path to media directory
 
