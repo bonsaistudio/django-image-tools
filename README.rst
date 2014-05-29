@@ -4,6 +4,9 @@
    :scale: 50
    :alt: Django Image Tools icon
 
+.. image:: https://travis-ci.org/bonsaistudio/django-image-tools.svg?branch=master
+   :alt Travis CI Status
+
 ==================
 Django Image Tools
 ==================
@@ -269,3 +272,13 @@ So, here's a complete script.
         model_with_image = Model.objects.all()[0]
         delete_image(model_with_image.image)
         model_with_image.delete()
+
+
+=======
+Support
+=======
+
+Django Image Tools uses Travis CI to test the integration with several versions of Python and Django.
+You can see the list of currently supported combinations on our `Travis CI page 
+<https://travis-ci.org/bonsaistudio/django-image-tools/>`_.
+
