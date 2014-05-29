@@ -131,12 +131,12 @@ class Image(models.Model):
     credit = models.TextField(null=True, blank=True)
 
     def thumbnail(self):
-        if hasattr(self, u'get__thumbnail'):
-            return u'<img src="{thumbnail_path}" width="100" height="100" />'.format(
+        if hasattr(self, 'get__thumbnail'):
+            return '<img src="{thumbnail_path}" width="100" height="100" />'.format(
                 thumbnail_path=self.get__thumbnail
             )
         else:
-            return u'<img src="{thumbnail_path}" width="100" height="100" />'.format(
+            return '<img src="{thumbnail_path}" width="100" height="100" />'.format(
                 thumbnail_path=self.get__original
             )
     thumbnail.allow_tags = True
@@ -168,9 +168,12 @@ class Image(models.Model):
                             try:
                                 size = Size.objects.get(name=params[0])
                             except Size.DoesNotExist:
-                                raise Size.DoesNotExist(u'One of your templates requested the \'{name}\' '
-                                                        u'method to django_image_tools, but I couldn\'t find any size named'
-                                                        u' \'{sizename}\''.format(name=name, sizename=params[0]))
+                                try:
+                                    size = Size.objects.get(name=params[0].decode('utf-8'))
+                                except Size.DoesNotExist:
+                                    raise Size.DoesNotExist(u'One of your templates requested the \'{name}\' '
+                                                            u'method to django_image_tools, but I couldn\'t find any size named'
+                                                            u' \'{sizename}\''.format(name=name, sizename=params[0]))
                         """
                         Return the requested size
                         """
@@ -180,7 +183,7 @@ class Image(models.Model):
                         Exactly two parameters. This means that the first one is a filter and the second one is a size.
                         """
                         try:
-                            image_filter = Filter.objects.get(name=params[0])
+                            image_filter = Filter.objects.get(name=params[0].decode('utf-8'))
                         except Filter.DoesNotExist:
                             raise Filter.DoesNotExist(u'One of your templates requested the \'{name}\' '
                                                       u'method to django_image_tools, but I couldn\'t find '
@@ -189,7 +192,7 @@ class Image(models.Model):
                         size = None
                         if params[1] != ORIGINAL_KEYWORD:
                             try:
-                                size = Size.objects.get(name=params[1])
+                                size = Size.objects.get(name=params[1].decode('utf-8'))
                             except Size.DoesNotExist:
                                 raise Size.DoesNotExist(u'One of your templates requested the \'{name}\' '
                                                         u'method to django_image_tools, but I couldn\'t find any '
@@ -239,22 +242,16 @@ def rescale_image(img, nsize, crop_point):
 
     new_width, new_height = (float(nsize[0]), float(nsize[1]))
 
-    print(u'Original size is ({0}, {1}), resizing to ({2}, {3})'.format(osize[0], osize[1], nsize[0], nsize[1]))
-
     original_ratio = original_width/original_height
     new_ratio = new_width/new_height
 
-    print(u'Original ratio is {0}, new ratio is {1}'.format(original_ratio, new_ratio))
-
     if original_ratio < new_ratio:
         #Resize by height
-        print(u'Considering new height as base')
         first_step_height = original_width/new_ratio
         first_step_width = original_width
         first_step_size = (first_step_width,first_step_height)
     else:
         #Resize by width
-        print(u'Considering new Width as base')
         first_step_width = new_ratio*original_height
         first_step_height = original_height
         first_step_size = (first_step_width, first_step_height)

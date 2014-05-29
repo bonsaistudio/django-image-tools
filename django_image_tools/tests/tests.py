@@ -23,8 +23,8 @@ def create_dummy_image(filename='Test_image', title='Title', caption='Caption', 
     im = PILImage.new('RGB', (100, 50))
     im.save('{0}/test_input.jpg'.format(settings.DJANGO_IMAGE_TOOLS_CACHE_ROOT))
     image = Image(filename=filename, title=title, caption=caption, alt_text=alt_text, credit=credit)
-    with open('{0}/test_input.jpg'.format(settings.DJANGO_IMAGE_TOOLS_CACHE_ROOT), 'r') as f:
-        image.image.save('testjpg.jpg', File(f))
+    with open('{0}/test_input.jpg'.format(settings.DJANGO_IMAGE_TOOLS_CACHE_ROOT), 'rb') as f:
+        image.image.save(u'testjpg.jpg', File(f))
     return image
 
 
@@ -44,9 +44,9 @@ class SimpleTest(TestCase):
         create_dummy_image('test_image', 'Test', 'Test', 'Test', 'None')
 
         im = PILImage.new('RGB', (150, 100))
-        im.save(u'{0}/test_input_bmp.bmp'.format(settings.DJANGO_IMAGE_TOOLS_CACHE_ROOT))
+        im.save('{0}/test_input_bmp.bmp'.format(settings.DJANGO_IMAGE_TOOLS_CACHE_ROOT))
         imagew = Image(filename=u'wasbmp', title=u'Test', caption=u'Test', alt_text=u'Test', credit=u'none.')
-        with open(u'{0}/test_input_bmp.bmp'.format(settings.DJANGO_IMAGE_TOOLS_CACHE_ROOT), 'r') as f:
+        with open(u'{0}/test_input_bmp.bmp'.format(settings.DJANGO_IMAGE_TOOLS_CACHE_ROOT), 'rb') as f:
             imagew.image.save(u'{0}/testbmp.bmp'.format(settings.DJANGO_IMAGE_TOOLS_CACHE_ROOT), File(f))
 
         size = Size(name=u'thumbnail', width=30, height=30)
@@ -68,8 +68,8 @@ class SimpleTest(TestCase):
         bw = Filter(name=u'grey_scaled', filter_type=0)
         bw.save()
 
-        self.imagepath = u'{0}/test_image.jpg'.format(settings.MEDIA_ROOT)
-        self.imagewpath = u'{0}/wasbmp.jpg'.format(settings.MEDIA_ROOT)
+        self.imagepath = '{0}/test_image.jpg'.format(settings.MEDIA_ROOT)
+        self.imagewpath = '{0}/wasbmp.jpg'.format(settings.MEDIA_ROOT)
 
     def testCreation(self):
         """
