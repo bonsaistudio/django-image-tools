@@ -319,12 +319,16 @@ def delete_sizes_for_image(image):
 
 
 def delete_images_for_filter(im_filter):
+    for image_object in Image.objects.all():
+        delete_image_with_filter_and_size(image_object, im_filter, None)
     for size in Size.objects.all():
         for image_object in Image.objects.all():
             delete_image_with_filter_and_size(image_object, im_filter, size)
 
 
 def delete_filters_for_image(image):
+    for im_filter in Filter.objects.all():
+        delete_image_with_filter_and_size(image, im_filter, None)
     for size in Size.objects.all():
         for im_filter in Filter.objects.all():
             delete_image_with_filter_and_size(image, im_filter, size)

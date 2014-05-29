@@ -17,7 +17,7 @@ install:
   - pip install Pillow --use-mirrors
   - pip install . --use-mirrors
 script:
-  - python manage.py syncdb && python manage.py test django_image_tools
+  - python manage.py syncdb --noinput && python manage.py test django_image_tools
 matrix:
   exclude:
     # Django doesn't support following combinations
