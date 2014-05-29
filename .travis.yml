@@ -20,8 +20,6 @@ script:
 matrix:
   exclude:
     # Django doesn't support following combinations
-    - python: 2.5
-      env: DJANGO=1.5
     - python: 3.2
       env: DJANGO=1.4.0
     - python: 3.2
