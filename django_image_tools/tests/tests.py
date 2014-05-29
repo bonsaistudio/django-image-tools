@@ -18,13 +18,13 @@ from django.test import TestCase
 from django_image_tools.models import *
 
 
-def create_dummy_image(filename=u'Test_image', title=u'Title', caption=u'Caption', alt_text=u'Alt Text',
-                       credit=u'Credit'):
+def create_dummy_image(filename='Test_image', title='Title', caption='Caption', alt_text='Alt Text',
+                       credit='Credit'):
     im = PILImage.new('RGB', (100, 50))
-    im.save(u'{0}/{1}/test_input.jpg'.format(settings.MEDIA_ROOT, settings.DJANGO_IMAGE_TOOLS_CACHE_DIR))
+    im.save('{0}/test_input.jpg'.format(settings.DJANGO_IMAGE_TOOLS_CACHE_ROOT))
     image = Image(filename=filename, title=title, caption=caption, alt_text=alt_text, credit=credit)
-    with open(u'{0}/{1}/test_input.jpg'.format(settings.MEDIA_ROOT, settings.DJANGO_IMAGE_TOOLS_CACHE_DIR), 'r') as f:
-        image.image.save(u'testjpg.jpg', File(f))
+    with open('{0}/test_input.jpg'.format(settings.DJANGO_IMAGE_TOOLS_CACHE_ROOT), 'r') as f:
+        image.image.save('testjpg.jpg', File(f))
     return image
 
 

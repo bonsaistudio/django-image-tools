@@ -40,10 +40,12 @@ class Size(models.Model):
             raise ValidationError(u'Sorry. Your name cannot contain the string \'{sep}\','
                                   u' as it is reserved for internal purposes'.format(sep=PARAMS_SEPARATOR))
 
-    def save(self, **kwargs):
+    def save(self, *args, **kwargs):
         if PARAMS_SEPARATOR in self.name:
             raise ValidationError(u'Sorry. Your name cannot contain the string \'{sep}\','
                                   u' as it is reserved for internal purposes'.format(sep=PARAMS_SEPARATOR))
+        super(Size, self).save(*args, **kwargs)
+
 
 class Filter(models.Model):
     GREY_SCALE = 0
@@ -67,11 +69,11 @@ class Filter(models.Model):
         if self.filter_type == self.GAUSSIAN_BLUR and self.numeric_parameter is None:
             raise ValidationError(u'Gaussian Blur needs the parameter to be specified')
 
-    def save(self, **kwargs):
+    def save(self, *args, **kwargs):
         if PARAMS_SEPARATOR in self.name:
             raise ValidationError(u'Sorry. Your name cannot contain the string \'{sep}\','
                                   u' as it is reserved for internal purposes'.format(sep=PARAMS_SEPARATOR))
-        super(Filter, self).save(**kwargs)
+        super(Filter, self).save(*args, **kwargs)
 
 
 class Image(models.Model):
@@ -201,10 +203,12 @@ class Image(models.Model):
             else:
                 super(models.Model, self).__getattribute__(name)
 
-    def save(**kwargs):
+    def save(self, force_insert=False, force_update=False, using=None,
+             update_fields=None):
         if os.path.exists(path_for_image(self)) and md5Checksum(path_for_image(self)) != self.checksum:
             raise ValidationError(u'An image with the same name already exists!')
-        super(Image, self).save(**kwargs)
+        super(Image, self).save(force_insert=force_insert,
+                                force_update=force_update, using=using, update_fields=update_fields)
 
 
 
