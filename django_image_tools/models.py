@@ -203,12 +203,10 @@ class Image(models.Model):
             else:
                 super(models.Model, self).__getattribute__(name)
 
-    def save(self, force_insert=False, force_update=False, using=None,
-             update_fields=None):
+    def save(self, *args, **kwargs):
         if os.path.exists(path_for_image(self)) and md5Checksum(path_for_image(self)) != self.checksum:
             raise ValidationError(u'An image with the same name already exists!')
-        super(Image, self).save(force_insert=force_insert,
-                                force_update=force_update, using=using, update_fields=update_fields)
+        super(Image, self).save(*args, **kwargs)
 
 
 
