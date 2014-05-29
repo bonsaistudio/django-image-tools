@@ -18,12 +18,12 @@ from django.test import TestCase
 from django_image_tools.models import *
 
 
-def create_dummy_image(filename='Test_image', title='Title', caption='Caption', alt_text='Alt Text',
-                       credit='Credit'):
+def create_dummy_image(filename=u'Test_image', title=u'Title', caption=u'Caption', alt_text=u'Alt Text',
+                       credit=u'Credit'):
     im = PILImage.new('RGB', (100, 50))
-    im.save('{0}/test_input.jpg'.format(settings.DJANGO_IMAGE_TOOLS_CACHE_ROOT))
+    im.save(u'{0}/test_input.jpg'.format(settings.DJANGO_IMAGE_TOOLS_CACHE_ROOT))
     image = Image(filename=filename, title=title, caption=caption, alt_text=alt_text, credit=credit)
-    with open('{0}/test_input.jpg'.format(settings.DJANGO_IMAGE_TOOLS_CACHE_ROOT), 'rb') as f:
+    with open(u'{0}/test_input.jpg'.format(settings.DJANGO_IMAGE_TOOLS_CACHE_ROOT), u'rb') as f:
         image.image.save(u'testjpg.jpg', File(f))
     return image
 
@@ -41,35 +41,35 @@ class SimpleTest(TestCase):
         Add a new image
         """
 
-        create_dummy_image('test_image', 'Test', 'Test', 'Test', 'None')
+        create_dummy_image(u'test_image', u'Test', u'Test', u'Test', u'None')
 
-        im = PILImage.new('RGB', (150, 100))
-        im.save('{0}/test_input_bmp.bmp'.format(settings.DJANGO_IMAGE_TOOLS_CACHE_ROOT))
+        im = PILImage.new(u'RGB', (150, 100))
+        im.save(u'{0}/test_input_bmp.bmp'.format(settings.DJANGO_IMAGE_TOOLS_CACHE_ROOT))
         imagew = Image(filename=u'wasbmp', title=u'Test', caption=u'Test', alt_text=u'Test', credit=u'none.')
-        with open(u'{0}/test_input_bmp.bmp'.format(settings.DJANGO_IMAGE_TOOLS_CACHE_ROOT), 'rb') as f:
+        with open(u'{0}/test_input_bmp.bmp'.format(settings.DJANGO_IMAGE_TOOLS_CACHE_ROOT), u'rb') as f:
             imagew.image.save(u'{0}/testbmp.bmp'.format(settings.DJANGO_IMAGE_TOOLS_CACHE_ROOT), File(f))
 
-        size = Size(name=u'thumbnail', width=30, height=30)
+        size = Size(name='thumbnail', width=30, height=30)
         size.save()
         self.size = size
 
-        long = Size(name=u'very_long', width=200, height=30)
-        long.save()
-        self.long = long
+        longSize = Size(name='very_long', width=200, height=30)
+        longSize.save()
+        self.long = longSize
 
-        tall = Size(name=u'very_tall', width=30, height=200)
+        tall = Size(name='very_tall', width=30, height=200)
         tall.save()
         self.tall = tall
 
-        huge = Size(name=u'huge', width=2000, height=2000)
+        huge = Size(name='huge', width=2000, height=2000)
         huge.save()
         self.huge = huge
 
-        bw = Filter(name=u'grey_scaled', filter_type=0)
+        bw = Filter(name='grey_scaled', filter_type=0)
         bw.save()
 
-        self.imagepath = '{0}/test_image.jpg'.format(settings.MEDIA_ROOT)
-        self.imagewpath = '{0}/wasbmp.jpg'.format(settings.MEDIA_ROOT)
+        self.imagepath = u'{0}/test_image.jpg'.format(settings.MEDIA_ROOT)
+        self.imagewpath = u'{0}/wasbmp.jpg'.format(settings.MEDIA_ROOT)
 
     def testCreation(self):
         """

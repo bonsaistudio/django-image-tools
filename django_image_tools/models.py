@@ -21,9 +21,9 @@ import os
 from django.db.models.signals import post_save, post_init, post_delete
 from . import settings
 
-PARAMS_SEPARATOR = '__'
-FUNCTION_PREFIX = 'get{0}'.format(PARAMS_SEPARATOR)
-ORIGINAL_KEYWORD = 'original'
+PARAMS_SEPARATOR = u'__'
+FUNCTION_PREFIX = u'get{0}'.format(PARAMS_SEPARATOR)
+ORIGINAL_KEYWORD = u'original'
 
 
 
@@ -51,8 +51,8 @@ class Filter(models.Model):
     GREY_SCALE = 0
     GAUSSIAN_BLUR = 1
     available_filters = (
-        (GREY_SCALE, 'Grey scale'),
-        (GAUSSIAN_BLUR, 'Gaussian Blur'),
+        (GREY_SCALE, u'Grey scale'),
+        (GAUSSIAN_BLUR, u'Gaussian Blur'),
     )
     name = models.CharField(max_length=30)
 
@@ -131,12 +131,12 @@ class Image(models.Model):
     credit = models.TextField(null=True, blank=True)
 
     def thumbnail(self):
-        if hasattr(self, 'get__thumbnail'):
-            return '<img src="{thumbnail_path}" width="100" height="100" />'.format(
+        if hasattr(self, u'get__thumbnail'):
+            return u'<img src="{thumbnail_path}" width="100" height="100" />'.format(
                 thumbnail_path=self.get__thumbnail
             )
         else:
-            return '<img src="{thumbnail_path}" width="100" height="100" />'.format(
+            return u'<img src="{thumbnail_path}" width="100" height="100" />'.format(
                 thumbnail_path=self.get__original
             )
     thumbnail.allow_tags = True
@@ -168,12 +168,7 @@ class Image(models.Model):
                             try:
                                 size = Size.objects.get(name=params[0])
                             except Size.DoesNotExist:
-                                try:
-                                    size = Size.objects.get(name=params[0].decode('utf-8'))
-                                except Size.DoesNotExist:
-                                    raise Size.DoesNotExist(u'One of your templates requested the \'{name}\' '
-                                                            u'method to django_image_tools, but I couldn\'t find any size named'
-                                                            u' \'{sizename}\''.format(name=name, sizename=params[0]))
+                                raise AttributeError
                         """
                         Return the requested size
                         """
@@ -183,21 +178,15 @@ class Image(models.Model):
                         Exactly two parameters. This means that the first one is a filter and the second one is a size.
                         """
                         try:
-                            image_filter = Filter.objects.get(name=params[0].decode('utf-8'))
+                            image_filter = Filter.objects.get(name=params[0])
                         except Filter.DoesNotExist:
-                            raise Filter.DoesNotExist(u'One of your templates requested the \'{name}\' '
-                                                      u'method to django_image_tools, but I couldn\'t find '
-                                                      u'any filter named'
-                                                      u' \'{filtername}\''.format(name=name,filtername=params[0]))
+                            raise AttributeError
                         size = None
                         if params[1] != ORIGINAL_KEYWORD:
                             try:
-                                size = Size.objects.get(name=params[1].decode('utf-8'))
+                                size = Size.objects.get(name=params[1])
                             except Size.DoesNotExist:
-                                raise Size.DoesNotExist(u'One of your templates requested the \'{name}\' '
-                                                        u'method to django_image_tools, but I couldn\'t find any '
-                                                        u'size named'
-                                                        u' \'{sizename}\''.format(name=name, sizename=params[1]))
+                                raise AttributeError
 
                         """
                         Return the appropriate filter and size.
@@ -371,7 +360,7 @@ def image_with_size(image, size):
 
 def image_with_filter_and_size(image, im_filter, size):
     # If size is None, then we're fetching the original.
-    sizename = 'original'
+    sizename = u'original'
     if size is not None:
         sizename = size.name
     filename, extension = os.path.splitext(os.path.basename(image.image.name))
