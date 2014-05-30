@@ -14,9 +14,12 @@ before_install:
 install:
   - pip install -q Django==$DJANGO --use-mirrors
   - pip install Pillow --use-mirrors
+  - pip install coveralls
   - pip install . --use-mirrors
 script:
-  - python manage.py syncdb --noinput && python manage.py test django_image_tools
+  - python manage.py syncdb --noinput && coverage run manage.py test django_image_tools
+after_success:
+  - coveralls
 matrix:
   exclude:
     # Django doesn't support following combinations
