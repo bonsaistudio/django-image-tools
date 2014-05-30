@@ -1,0 +1,320 @@
+
+
+<!DOCTYPE html>
+<!--[if IE 8]><html class="no-js lt-ie9" lang="en" > <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  
+  <title>How to use it &mdash; Django Image Tools 0.7.b1 documentation</title>
+  
+
+  
+  
+
+  
+  <link href='https://fonts.googleapis.com/css?family=Lato:400,700|Roboto+Slab:400,700|Inconsolata:400,700' rel='stylesheet' type='text/css'>
+
+  
+  
+    
+
+  
+
+  
+  
+    <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  
+
+  
+    <link rel="top" title="Django Image Tools 0.7.b1 documentation" href="index.html"/>
+        <link rel="next" title="How it works" href="how_works.html"/>
+        <link rel="prev" title="Quick Start" href="quickstart.html"/> 
+
+  
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/modernizr/2.6.2/modernizr.min.js"></script>
+
+</head>
+
+<body class="wy-body-for-nav" role="document">
+
+  <div class="wy-grid-for-nav">
+
+    
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-nav-search">
+        <a href="index.html" class="fa fa-home"> Django Image Tools</a>
+        <div role="search">
+  <form id ="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+      </div>
+
+      <div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="main navigation">
+        
+        
+            <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="quickstart.html">Quick Start</a></li>
+<li class="toctree-l1"><a class="reference internal" href="quickstart.html#configuration">Configuration</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="">How to use it</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#philosophy">Philosophy</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#include-it-in-your-models">Include it in your models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#syntax">Syntax</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#size-cropping">Size &amp; Cropping</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#filters">Filters</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="how_works.html">How it works</a></li>
+<li class="toctree-l1"><a class="reference internal" href="more_features.html">More features</a></li>
+<li class="toctree-l1"><a class="reference internal" href="testing.html">Testing</a></li>
+<li class="toctree-l1"><a class="reference internal" href="testing.html#support">Support</a></li>
+</ul>
+
+        
+      </div>
+      &nbsp;
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap">
+
+      
+      <nav class="wy-nav-top" role="navigation" aria-label="top navigation">
+        <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+        <a href="index.html">Django Image Tools</a>
+      </nav>
+
+
+      
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="breadcrumbs navigation">
+  <ul class="wy-breadcrumbs">
+    <li><a href="index.html">Docs</a> &raquo;</li>
+      
+    <li>How to use it</li>
+      <li class="wy-breadcrumbs-aside">
+        
+          <a href="_sources/how_to_use.txt" rel="nofollow"> View page source</a>
+        
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main">
+            
+  <div class="section" id="how-to-use-it">
+<h1>How to use it<a class="headerlink" href="#how-to-use-it" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="philosophy">
+<h2>Philosophy<a class="headerlink" href="#philosophy" title="Permalink to this headline">¶</a></h2>
+<p>There are many tools suitable for cutting, cropping, resizing and applying filters at runtime.
+but we noticed that many of these lacked a sense of &#8216;DRY-ness&#8217;
+as almost all of them forced you to input the size and the filter options in the template itself.</p>
+<p>Now, try to see this from a designer point of view. As a designer, I want all of the images in this template to have a
+specific effect, and maybe I want a different effect for the hover version. So what do I do? Do I write down the
+effect&#8217;s parameters for each image in the template?</p>
+<p>And what if I wanted to change the effect after the template is ready?</p>
+<p>The same thing applies for image sizes, what if you suddenly needed your images to be bigger or smaller?</p>
+<p>Django Image Tools allows you to create specific filters and sizes for your images, and bind those filters to
+your images through their name, so you can change the filter parameters and the image size from the admin panel itself,
+and those changes will automatically be applied to all of the bound images in your templates. Now your templates
+will remain untouched even if you decide to change a filter, or even the size of your images.</p>
+<p>We believe this will save some time looking at the docs of an app trying to figure out which custom filter file you
+should include, how to input your parameters, etc...</p>
+</div>
+<div class="section" id="include-it-in-your-models">
+<h2>Include it in your models<a class="headerlink" href="#include-it-in-your-models" title="Permalink to this headline">¶</a></h2>
+<p>Nothing more simple. Just import the &#8216;Image&#8217; model in your models.py file and create a Foreign Key to it. Done!</p>
+</div>
+<div class="section" id="syntax">
+<h2>Syntax<a class="headerlink" href="#syntax" title="Permalink to this headline">¶</a></h2>
+<p>We tried to make the syntax as readable and intuitive as possible.
+Filter names should be applied before size names. Size names are mandatory.</p>
+<p>To activate django_image_tools, you need to call a <tt class="docutils literal"><span class="pre">get__</span></tt> attribute on the image.</p>
+<p>For example, if you want the path for a size named &#8216;thumbnail&#8217;, you should define a new Size called &#8216;thumbnail&#8217; on
+the admin panel. Then, in your templates you should use:</p>
+<div class="highlight-python"><div class="highlight"><pre>&lt;img src=&quot;image.get__thumbnail&quot; /&gt;
+</pre></div>
+</div>
+<p>To improve readability of your templates, we advice you to name the filters as adjectives.
+For example, a Gaussian Blur could be called &#8216;blurred&#8217;.</p>
+<p>If you want to have a thumbnail with your Gaussian blur, now the template reads:</p>
+<div class="highlight-python"><div class="highlight"><pre>&lt;img src=&quot;image.get__blurred__thumbnail&quot; /&gt;
+</pre></div>
+</div>
+<p>How intuitive is that?
+Note that filters and sizes are separated by a double &#8216;_&#8217;, as django-esque as possible.</p>
+<p>Obviously, you cannot add filters / sizes whose name contains a double &#8216;_&#8217;.</p>
+</div>
+<div class="section" id="size-cropping">
+<h2>Size &amp; Cropping<a class="headerlink" href="#size-cropping" title="Permalink to this headline">¶</a></h2>
+<p>You will find in the admin panel the &#8216;django_image_tools&#8217; option. You can enter all the sizes
+you&#8217;re going to use in your website there.
+The options for each size are:</p>
+<ul class="simple">
+<li>Name</li>
+<li>Width  (auto)</li>
+<li>Height (auto)</li>
+</ul>
+<p>All of the sizes you create will be available for the images the user will upload through its name.
+For example, you can have a &#8216;thumbnail&#8217; 250x250 size, and every image you upload will have the <tt class="docutils literal"><span class="pre">get__thumbnail</span></tt>
+method that will output the path for the image with the requested size.</p>
+<p>Having &#8216;auto&#8217; height, for exmaple, means that the image will be resized to match the given width, and keep the original
+aspect ratio (This is useful for example, if you want to create a <em>pinterest</em> board).</p>
+<p>Of course, you can only have auto height or auto width, but not both.</p>
+<p>In the template, to display an image field, all you have to do is:</p>
+<div class="highlight-python"><div class="highlight"><pre>&lt;img src=&#39;{{ some_image.get__thumbnail }}&#39; alt_text=&#39;{{ some_image.alt_text }}&#39; /&gt;
+</pre></div>
+</div>
+<p>Here&#8217;s a list of all the fields for each image:</p>
+<ul>
+<li><dl class="first docutils">
+<dt>checksum</dt>
+<dd><p class="first last">A md5 checksum of the image. Useful for checking the integrity of the files with the database.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>filename</dt>
+<dd><p class="first">The current file name. Changing this will result in renaming the actual file (useful for SEO purposes).</p>
+<p class="last"><strong>Attempting to rename with the name of an existing file will throw an exception</strong></p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>subject_horizontal_position</dt>
+<dd><p class="first last">The horizontal position of the subject. This is currently one of the list
+(left, 1/3, center, 2/3, right).</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>subject_vertical_position</dt>
+<dd><p class="first">The vertical position of the subject. This is currently one of the list
+(top, 1/3, center, 2/3, bottom).</p>
+<p class="last"><strong>If the aspect ratio of the resized image doesn&#8217;t match the original ratio,
+the image will be cropped around this point</strong></p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>was_upscaled</dt>
+<dd><p class="first last">Flag that notices if the image was used somewhere with a size
+bigger than its own (resulting in an upscaling). Useful for letting the user know that it
+should replace this image with a higher-resolution version.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>title</dt>
+<dd><p class="first last">A title field for the image</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>caption</dt>
+<dd><p class="first last">Caption of the image</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>alt_text</dt>
+<dd><p class="first last">For blind people and SEO</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>credit</dt>
+<dd><p class="first last">Credit field</p>
+</dd>
+</dl>
+</li>
+</ul>
+</div>
+<div class="section" id="filters">
+<h2>Filters<a class="headerlink" href="#filters" title="Permalink to this headline">¶</a></h2>
+<p>Django Image tools also works great for applying filters to your images.
+To define a filter, just add it in the admin panel, and tweak it with its parameters until you get the desired effect.</p>
+<p>For example, let&#8217;s say you defined a filter named &#8216;blurred&#8217; with a Gaussian Blur and you want
+a blurred thumbnail of your image.
+This should be the image tag.</p>
+<div class="highlight-python"><div class="highlight"><pre>&lt;img src=&quot;{{ some_image.get__blurred__thumbnail }}&quot; /&gt;
+</pre></div>
+</div>
+<p><strong>Note</strong> that when using a filter, the image size is mandatory. If you want to apply a filter to an image with its
+original size, use &#8216;original&#8217; as size</p>
+<div class="highlight-python"><div class="highlight"><pre>&lt;img src=&quot;{{ some_image.get__blurred__original }}&quot; /&gt;
+</pre></div>
+</div>
+</div>
+</div>
+
+
+          </div>
+          <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="how_works.html" class="btn btn-neutral float-right" title="How it works"/>Next <span class="fa fa-arrow-circle-right"></span></a>
+      
+      
+        <a href="quickstart.html" class="btn btn-neutral" title="Quick Start"><span class="fa fa-arrow-circle-left"></span> Previous</a>
+      
+    </div>
+  
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>
+        &copy; Copyright 2014, Bonsai Studio.
+    </p>
+  </div>
+
+  <a href="https://github.com/snide/sphinx_rtd_theme">Sphinx theme</a> provided by <a href="https://readthedocs.org">Read the Docs</a>
+</footer>
+        </div>
+      </div>
+
+    </section>
+
+  </div>
+  
+
+
+  
+
+    <script type="text/javascript">
+        var DOCUMENTATION_OPTIONS = {
+            URL_ROOT:'./',
+            VERSION:'0.7.b1',
+            COLLAPSE_INDEX:false,
+            FILE_SUFFIX:'.html',
+            HAS_SOURCE:  true
+        };
+    </script>
+      <script type="text/javascript" src="_static/jquery.js"></script>
+      <script type="text/javascript" src="_static/underscore.js"></script>
+      <script type="text/javascript" src="_static/doctools.js"></script>
+
+  
+
+  
+  
+    <script type="text/javascript" src="_static/js/theme.js"></script>
+  
+
+  
+  
+  <script type="text/javascript">
+      jQuery(function () {
+          SphinxRtdTheme.StickyNav.enable();
+      });
+  </script>
+   
+
+</body>
+</html>

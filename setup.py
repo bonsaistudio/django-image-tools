@@ -1,7 +1,7 @@
 from distutils.core import setup
 
 setup(name='django-image-tools',
-      version='0.6.b5',
+      version='0.7.b1',
       description='Image tools for Django',
       author='Bonsai Studio',
       author_email='info@bonsai-studio.net',
@@ -16,8 +16,8 @@ setup(name='django-image-tools',
           'License :: OSI Approved :: BSD License',
           'Programming Language :: Python',
       ],
-      install_requires = [
-        'Pillow', 
+      install_requires=[
+          'Pillow',
       ],
       packages=['django_image_tools', 'django_image_tools.migrations'],
       )

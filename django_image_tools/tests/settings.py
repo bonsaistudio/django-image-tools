@@ -56,4 +56,4 @@ PROJECT_ROOT = os.path.dirname(os.path.realpath(__file__))
 MEDIA_ROOT = os.path.join(PROJECT_ROOT, 'media')
 MEDIA_URL = '/media/'
 
-DJANGO_IMAGE_TOOLS_UPLOAD_TO = os.path.join(PROJECT_ROOT, 'media/upload')
+UPLOAD_TO = os.path.join(PROJECT_ROOT, 'media/upload')

@@ -1,19 +1,15 @@
 # Created by Bonsai Studio <info@bonsai-studio.net>
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+# WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
+# IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
+# INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+# (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
+#  OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+#  OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+# EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#
 # Copyright (C) Bonsai Studio
-#
-# This program is free software; you can redistribute it and/or
-# modify it under the terms of the GNU General Public License
-# as published by the Free Software Foundation; either version 2
-# of the License, or (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU General Public License for more details.
-#
-# You should have received a copy of the GNU General Public License
-# along with this program; if not, write to the Free Software
-# Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA  02110-1301, USA.
 
 from __future__ import absolute_import
 import hashlib
@@ -39,20 +35,24 @@ class Size(models.Model):
     def __unicode__(self):
         return u'{0} - ({1}, {2})'.format(self.name, self.width, self.height)
 
-    def save(self, force_insert=False, force_update=False, using=None,
-             update_fields=None):
+    def clean(self):
         if PARAMS_SEPARATOR in self.name:
             raise ValidationError(u'Sorry. Your name cannot contain the string \'{sep}\','
                                   u' as it is reserved for internal purposes'.format(sep=PARAMS_SEPARATOR))
-        super(Size, self).save(force_insert, force_update, using, update_fields)
+
+    def save(self, *args, **kwargs):
+        if PARAMS_SEPARATOR in self.name:
+            raise ValidationError(u'Sorry. Your name cannot contain the string \'{sep}\','
+                                  u' as it is reserved for internal purposes'.format(sep=PARAMS_SEPARATOR))
+        super(Size, self).save(*args, **kwargs)
 
 
 class Filter(models.Model):
     GREY_SCALE = 0
     GAUSSIAN_BLUR = 1
     available_filters = (
-        (GREY_SCALE, 'Grey scale'),
-        (GAUSSIAN_BLUR, 'Gaussian Blur'),
+        (GREY_SCALE, u'Grey scale'),
+        (GAUSSIAN_BLUR, u'Gaussian Blur'),
     )
     name = models.CharField(max_length=30)
 
@@ -68,6 +68,12 @@ class Filter(models.Model):
                                   u' as it is reserved for internal purposes'.format(sep=PARAMS_SEPARATOR))
         if self.filter_type == self.GAUSSIAN_BLUR and self.numeric_parameter is None:
             raise ValidationError(u'Gaussian Blur needs the parameter to be specified')
+
+    def save(self, *args, **kwargs):
+        if PARAMS_SEPARATOR in self.name:
+            raise ValidationError(u'Sorry. Your name cannot contain the string \'{sep}\','
+                                  u' as it is reserved for internal purposes'.format(sep=PARAMS_SEPARATOR))
+        super(Filter, self).save(*args, **kwargs)
 
 
 class Image(models.Model):
@@ -162,9 +168,7 @@ class Image(models.Model):
                             try:
                                 size = Size.objects.get(name=params[0])
                             except Size.DoesNotExist:
-                                raise Size.DoesNotExist(u'One of your templates requested the \'{name}\' '
-                                                        u'method to django_image_tools, but I couldn\'t find any size named'
-                                                        u' \'{sizename}\''.format(name=name, sizename=params[0]))
+                                raise AttributeError
                         """
                         Return the requested size
                         """
@@ -176,19 +180,13 @@ class Image(models.Model):
                         try:
                             image_filter = Filter.objects.get(name=params[0])
                         except Filter.DoesNotExist:
-                            raise Filter.DoesNotExist(u'One of your templates requested the \'{name}\' '
-                                                      u'method to django_image_tools, but I couldn\'t find '
-                                                      u'any filter named'
-                                                      u' \'{filtername}\''.format(name=name,filtername=params[0]))
+                            raise AttributeError
                         size = None
                         if params[1] != ORIGINAL_KEYWORD:
                             try:
                                 size = Size.objects.get(name=params[1])
                             except Size.DoesNotExist:
-                                raise Size.DoesNotExist(u'One of your templates requested the \'{name}\' '
-                                                        u'method to django_image_tools, but I couldn\'t find any '
-                                                        u'size named'
-                                                        u' \'{sizename}\''.format(name=name, sizename=params[1]))
+                                raise AttributeError
 
                         """
                         Return the appropriate filter and size.
@@ -197,12 +195,10 @@ class Image(models.Model):
             else:
                 super(models.Model, self).__getattribute__(name)
 
-    def save(self, force_insert=False, force_update=False, using=None,
-             update_fields=None):
+    def save(self, *args, **kwargs):
         if os.path.exists(path_for_image(self)) and md5Checksum(path_for_image(self)) != self.checksum:
             raise ValidationError(u'An image with the same name already exists!')
-        super(Image, self).save(force_insert=force_insert,
-                                force_update=force_update, using=using, update_fields=update_fields)
+        super(Image, self).save(*args, **kwargs)
 
 
 
@@ -235,22 +231,16 @@ def rescale_image(img, nsize, crop_point):
 
     new_width, new_height = (float(nsize[0]), float(nsize[1]))
 
-    print(u'Original size is ({0}, {1}), resizing to ({2}, {3})'.format(osize[0], osize[1], nsize[0], nsize[1]))
-
     original_ratio = original_width/original_height
     new_ratio = new_width/new_height
 
-    print(u'Original ratio is {0}, new ratio is {1}'.format(original_ratio, new_ratio))
-
     if original_ratio < new_ratio:
         #Resize by height
-        print(u'Considering new height as base')
         first_step_height = original_width/new_ratio
         first_step_width = original_width
         first_step_size = (first_step_width,first_step_height)
     else:
         #Resize by width
-        print(u'Considering new Width as base')
         first_step_width = new_ratio*original_height
         first_step_height = original_height
         first_step_size = (first_step_width, first_step_height)
@@ -310,12 +300,16 @@ def delete_sizes_for_image(image):
 
 
 def delete_images_for_filter(im_filter):
+    for image_object in Image.objects.all():
+        delete_image_with_filter_and_size(image_object, im_filter, None)
     for size in Size.objects.all():
         for image_object in Image.objects.all():
             delete_image_with_filter_and_size(image_object, im_filter, size)
 
 
 def delete_filters_for_image(image):
+    for im_filter in Filter.objects.all():
+        delete_image_with_filter_and_size(image, im_filter, None)
     for size in Size.objects.all():
         for im_filter in Filter.objects.all():
             delete_image_with_filter_and_size(image, im_filter, size)
@@ -366,7 +360,7 @@ def image_with_size(image, size):
 
 def image_with_filter_and_size(image, im_filter, size):
     # If size is None, then we're fetching the original.
-    sizename = 'original'
+    sizename = u'original'
     if size is not None:
         sizename = size.name
     filename, extension = os.path.splitext(os.path.basename(image.image.name))
