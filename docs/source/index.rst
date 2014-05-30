@@ -7,6 +7,16 @@ Welcome to Django Image Tools's documentation!
 ==============================================
 .. image:: https://travis-ci.org/bonsaistudio/django-image-tools.svg?branch=master
 
+.. image:: https://pypip.in/version/django-image-tools/badge.png
+
+.. image:: https://pypip.in/license/django-image-tools/badge.png
+
+.. image:: https://pypip.in/download/django-image-tools/badge.png
+
+.. image:: https://coveralls.io/repos/bonsaistudio/django-image-tools/badge.png
+
+.. image:: /_static/django-image-tools-icon.png
+
 Contents:
 
 .. toctree::
