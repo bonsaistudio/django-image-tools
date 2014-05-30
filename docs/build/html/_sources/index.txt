@@ -5,6 +5,7 @@
 
 Welcome to Django Image Tools's documentation!
 ==============================================
+.. image:: https://travis-ci.org/bonsaistudio/django-image-tools.svg?branch=master
 
 Contents:
 
