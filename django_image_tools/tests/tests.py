@@ -12,8 +12,9 @@
 # Copyright (C) Bonsai Studio
 
 from __future__ import absolute_import
+from django.core.exceptions import ImproperlyConfigured
 from django.core.files import File
-
+from django.conf import settings as django_settings
 from django.test import TestCase
 from django_image_tools.models import *
 
@@ -95,30 +96,39 @@ class SimpleTest(TestCase):
         self.assertEqual(img.format, u'JPEG')
 
 
-    def testApplyFilter(self):
+    def test_grey_scale(self):
         """
         Test that applying a filter results in a new image created correctly.
         """
         image = Image.objects.get(filename=u'test_image')
         bw = Filter.objects.get(name=u'grey_scaled')
 
-        if os.path.exists(path_for_image_with_filter_and_size(image, bw, self.size)):
-            os.remove(path_for_image_with_filter_and_size(image, bw, self.size))
         self.assertFalse(os.path.exists(path_for_image_with_filter_and_size(image, bw, self.size)))
         self.assertEqual(image.get__grey_scaled__thumbnail,
                          media_path_for_image_with_filter_and_size(image, bw, self.size))
         self.assertTrue(os.path.exists(path_for_image_with_filter_and_size(image, bw, self.size)))
 
+    def test_gaussian_blur(self):
+        """
+        Tests the gaussian blur
+        """
+        im_filter = Filter(name=u'blurred', filter_type=Filter.GAUSSIAN_BLUR, numeric_parameter=2)
+        im_filter.save()
 
-    def testOriginalFilter(self):
+        image = Image.objects.get(filename=u'test_image')
+
+        path = media_path_for_image_with_filter_and_size(image, im_filter, self.size)
+        self.assertFalse(os.path.exists(path))
+        self.assertEqual(image.get__blurred__thumbnail, path)
+        self.assertTrue(os.path.exists(path_for_image_with_filter_and_size(image, im_filter, self.size)))
+
+    def test_original_filter(self):
         """
         Test that applying a filter results in a new image created correctly.
         """
         image = Image.objects.get(filename=u'test_image')
         bw = Filter.objects.get(name=u'grey_scaled')
 
-        if os.path.exists(path_for_image_with_filter_and_size(image, bw, None)):
-            os.remove(path_for_image_with_filter_and_size(image, bw, None))
         self.assertFalse(os.path.exists(path_for_image_with_filter_and_size(image, bw, None)))
         self.assertEqual(image.get__grey_scaled__original,
                          media_path_for_image_with_filter_and_size(image, bw, None))
@@ -173,13 +183,37 @@ class SimpleTest(TestCase):
     def test_unicode(self):
         self.assertEqual(self.size.__unicode__(), u'thumbnail - (30, 30)')
 
+    def test_filter_unicode(self):
+        bw = Filter.objects.get(name=u'grey_scaled')
+        self.assertEqual(bw.__unicode__(), u'grey_scaled')
+
+    def test_non_existing_parameters(self):
+        image = Image.objects.get(filename=u'test_image')
+        self.assertRaises(AttributeError, lambda: image.get__grey_scaled__thbnail)
+        self.assertRaises(AttributeError, lambda: image.get__grey_scad__thumbnail)
+
+    def test_double_filter(self):
+        image = Image.objects.get(filename=u'test_image')
+        self.assertRaises(NotImplementedError, lambda: image.get__grey_scaled__blurred__thumbnail)
+
+    def test_returns_attribute_error(self):
+        image = Image.objects.get(filename=u'test_image')
+        self.assertRaises(AttributeError, lambda: image.non_existing_property)
+
+    def test_gaussian_blur_parameter_exception(self):
+        gaussian_filter = Filter(name=u'gaussian', filter_type=Filter.GAUSSIAN_BLUR)
+        self.assertRaises(ValidationError, gaussian_filter.save)
+        self.assertRaises(ValidationError, gaussian_filter.clean)
+
     def test_reserved_keywords_in_size(self):
         error_causing = Size(name=u'huge__with_double_underscore', width=2000, height=2000)
         self.assertRaises(ValidationError, error_causing.save)
+        self.assertRaises(ValidationError, error_causing.clean)
 
     def test_reserved_keywords_in_filters(self):
         error_causing = Filter(name=u'huge__with_double_underscore', filter_type=Filter.GREY_SCALE)
         self.assertRaises(ValidationError, error_causing.save)
+        self.assertRaises(ValidationError, error_causing.clean)
 
     def test_thumbnail(self):
         image = Image.objects.get(filename=u'test_image')
@@ -214,19 +248,49 @@ class SimpleTest(TestCase):
         image = Image.objects.get(filename=u'test_image')
         self.assertTrue(image.was_upscaled)
 
+    # ----- Settings tests
+    def test_media_root_is_set(self):
+        mr = django_settings.MEDIA_ROOT
+        del django_settings.MEDIA_ROOT
+        self.assertRaises(ImproperlyConfigured, settings.update_settings)
+        django_settings.MEDIA_ROOT = mr
+        settings.update_settings()
+
+
+    def test_folders_are_created(self):
+        if os.listdir(settings.MEDIA_ROOT) != []:
+            #Cannot run tests, there are some files in the media root
+            self.assertEqual(1, 1, u"Test did not run as the MEDIA_ROOT is not empty")
+        else:
+            os.remove(settings.MEDIA_ROOT)
+            os.remove(settings.UPLOAD_TO)
+            self.assertFalse(os.path.exists(settings.MEDIA_ROOT))
+            settings.update_settings()
+            self.assertTrue(os.path.exists(settings.MEDIA_ROOT))
+            self.assertTrue(os.path.exists(settings.UPLOAD_TO))
+
+    def test_settings_fallback(self):
+        django_settings.UPLOAD_TO = 'upload_to'
+        django_settings.DJANGO_IMAGE_TOOLS_UPLOAD_TO = 'djtupload'
+
+        settings.update_settings()
+        self.assertEqual(settings.UPLOAD_TO, 'djtupload')
+
+        del django_settings.UPLOAD_TO
+        del django_settings.DJANGO_IMAGE_TOOLS_UPLOAD_TO
+
+        settings.update_settings()
+        self.assertEqual(settings.UPLOAD_TO, settings.MEDIA_ROOT)
+
     def tearDown(self):
         """
         Cleaning up what was created...
         """
         image = Image.objects.get(filename=u'test_image')
         imagew = Image.objects.get(filename=u'wasbmp')
-        image.delete()
-        imagew.delete()
-        if os.path.exists(u'{0}/test_input.jpg'.format(settings.DJANGO_IMAGE_TOOLS_CACHE_ROOT)):
-            os.remove(u'{0}/test_input.jpg'.format(settings.DJANGO_IMAGE_TOOLS_CACHE_ROOT))
-        if os.path.exists(u'{0}/test_input_bmp.bmp'.format(settings.DJANGO_IMAGE_TOOLS_CACHE_ROOT)):
-            os.remove(u'{0}/test_input_bmp.bmp'.format(settings.DJANGO_IMAGE_TOOLS_CACHE_ROOT))
-        if self.size.pk is not None:
-            self.size.delete()
-        os.remove(path_for_image(image))
-        os.remove(path_for_image(imagew))
+
+        delete_image(image)
+        delete_image(imagew)
+        # Delete the temporary images
+        os.remove(u'{0}/test_input_bmp.bmp'.format(settings.DJANGO_IMAGE_TOOLS_CACHE_ROOT))
+        os.remove(u'{0}/test_input.jpg'.format(settings.DJANGO_IMAGE_TOOLS_CACHE_ROOT))

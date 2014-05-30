@@ -20,11 +20,11 @@ from PIL import Image as PILImage, ImageFilter
 import os
 from django.db.models.signals import post_save, post_init, post_delete
 from . import settings
+from django.utils.translation import gettext as _
 
 PARAMS_SEPARATOR = u'__'
 FUNCTION_PREFIX = u'get{0}'.format(PARAMS_SEPARATOR)
 ORIGINAL_KEYWORD = u'original'
-
 
 
 class Size(models.Model):
@@ -37,13 +37,19 @@ class Size(models.Model):
 
     def clean(self):
         if PARAMS_SEPARATOR in self.name:
-            raise ValidationError(u'Sorry. Your name cannot contain the string \'{sep}\','
-                                  u' as it is reserved for internal purposes'.format(sep=PARAMS_SEPARATOR))
+            raise ValidationError(
+                _('Your name cannot contain the string \'%(reserved_string)s\' as it is reserved.'),
+                code='invalid',
+                params={'reserved_string': PARAMS_SEPARATOR},
+            )
 
     def save(self, *args, **kwargs):
         if PARAMS_SEPARATOR in self.name:
-            raise ValidationError(u'Sorry. Your name cannot contain the string \'{sep}\','
-                                  u' as it is reserved for internal purposes'.format(sep=PARAMS_SEPARATOR))
+            raise ValidationError(
+                _('Your name cannot contain the string \'%(reserved_string)s\' as it is reserved.'),
+                code='invalid',
+                params={'reserved_string': PARAMS_SEPARATOR},
+            )
         super(Size, self).save(*args, **kwargs)
 
 
@@ -64,15 +70,23 @@ class Filter(models.Model):
 
     def clean(self):
         if PARAMS_SEPARATOR in self.name:
-            raise ValidationError(u'Sorry. Your name cannot contain the string \'{sep}\','
-                                  u' as it is reserved for internal purposes'.format(sep=PARAMS_SEPARATOR))
+            raise ValidationError(
+                _('Your name cannot contain the string \'%(reserved_string)s\' as it is reserved.'),
+                code='invalid',
+                params={'reserved_string': PARAMS_SEPARATOR},
+            )
         if self.filter_type == self.GAUSSIAN_BLUR and self.numeric_parameter is None:
-            raise ValidationError(u'Gaussian Blur needs the parameter to be specified')
+            raise ValidationError(_('Gaussian Blur needs the parameter to be specified'))
 
     def save(self, *args, **kwargs):
         if PARAMS_SEPARATOR in self.name:
-            raise ValidationError(u'Sorry. Your name cannot contain the string \'{sep}\','
-                                  u' as it is reserved for internal purposes'.format(sep=PARAMS_SEPARATOR))
+            raise ValidationError(
+                _('Your name cannot contain the string \'%(reserved_string)s\' as it is reserved.'),
+                code='invalid',
+                params={'reserved_string': PARAMS_SEPARATOR},
+            )
+        if self.filter_type == self.GAUSSIAN_BLUR and self.numeric_parameter is None:
+            raise ValidationError(_('Gaussian Blur needs the parameter to be specified'))
         super(Filter, self).save(*args, **kwargs)
 
 
@@ -200,8 +214,6 @@ class Image(models.Model):
             raise ValidationError(u'An image with the same name already exists!')
         super(Image, self).save(*args, **kwargs)
 
-
-
     def save_bypassing_signals(self):
         #Save changes to DB, but to avoid triggering this same method again, first disconnect it
         post_save.disconnect(convert_to_png, Image)
@@ -222,9 +234,6 @@ def md5Checksum(filePath):
 
 
 def rescale_image(img, nsize, crop_point):
-    if not crop_point:
-        crop_point = (int(round(img.size[0]/float(2))),
-                      int(round(img.size[1]/float(2))))
     # First of all, I'm rescaling to whatever the biggest size is
     osize = (img.size[0], img.size[1])
     original_width, original_height = (float(img.size[0]), float(img.size[1]))
@@ -249,18 +258,6 @@ def rescale_image(img, nsize, crop_point):
     crop_x, crop_y = crop_point
     rect_x = crop_x - first_step_width/2
     rect_y = crop_y - first_step_height/2
-
-    if rect_x < 0:
-        #Crop rect overflows to the left
-        rect_x = 0
-    elif rect_x + first_step_width > original_width:
-        #Crop rect overflows to the right
-        rect_x -= (rect_x + first_step_width) - original_width
-    if rect_y < 0:
-        #Crop rect overflows to the top
-        rect_y = 0
-    elif rect_y + first_step_height > original_height:
-        rect_y -= (rect_y + first_step_height) - original_height
 
     img = img.crop(
         (
@@ -377,8 +374,6 @@ def render_image_with_size(imageObject, size):
         imageObject.was_upscaled=True
         imageObject.save_bypassing_signals()
     image_path = path_for_image_with_size(imageObject, size)
-    if not os.path.exists(os.path.dirname(image_path)):
-        os.makedirs(os.path.dirname(image_path))
     resizedImage.save(image_path)
 
 
@@ -426,11 +421,11 @@ def convert_to_png(sender, **kwargs):
     os.remove(current_path_for_image(imageObject))
     img.name = path_for_image(imageObject)
 
-    if img.format is not u'PNG' and img.format is not u'JPEG':
+    if img.format is not 'PNG' and img.format is not 'JPEG':
         #Convert image to jpg
-        img.save(path_for_image(imageObject, u'.jpg'), u'JPEG', quality=80, optimize=True, progressive=True)
+        img.save(path_for_image(imageObject, '.jpg'), 'JPEG', quality=80, optimize=True, progressive=True)
         #Save new path reference
-        imageObject.image.name = path_for_image(imageObject, u'.jpg')
+        imageObject.image.name = path_for_image(imageObject, '.jpg')
     else:
         path = path_for_image(imageObject, extension)
         img.save(path)

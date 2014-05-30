@@ -19,29 +19,44 @@ from django.core.exceptions import ImproperlyConfigured
 def get(key, default):
     return getattr(settings, key, default)
 
-
 DJANGO_IMAGE_TOOLS_CACHE_DIR = get('DJANGO_IMAGE_TOOLS_CACHE_DIR', 'cache')
 MEDIA_URL = get('MEDIA_URL', '/media/')
-try:
-    MEDIA_ROOT = settings.MEDIA_ROOT
-except KeyError:
-    raise ImproperlyConfigured('Django Image Tools couldn\'t find the \'MEDIA_ROOT\'. Have you set it up in your settings.py?')
+DJANGO_IMAGE_TOOLS_CACHE_ROOT = ''
+MEDIA_ROOT = ''
+UPLOAD_TO = ''
 
-if not os.path.exists(MEDIA_ROOT):
-    os.makedirs(MEDIA_ROOT)
 
-DJANGO_IMAGE_TOOLS_CACHE_ROOT = os.path.join(MEDIA_ROOT, DJANGO_IMAGE_TOOLS_CACHE_DIR)
+def update_settings():
+    global DJANGO_IMAGE_TOOLS_CACHE_DIR
+    DJANGO_IMAGE_TOOLS_CACHE_DIR = get('DJANGO_IMAGE_TOOLS_CACHE_DIR', 'cache')
+    global MEDIA_URL
+    MEDIA_URL = get('MEDIA_URL', '/media/')
+    global DJANGO_IMAGE_TOOLS_CACHE_ROOT
+    global MEDIA_ROOT
+    global UPLOAD_TO
 
-if not os.path.exists(DJANGO_IMAGE_TOOLS_CACHE_ROOT):
-    os.makedirs(DJANGO_IMAGE_TOOLS_CACHE_ROOT)
+    try:
+        MEDIA_ROOT = settings.MEDIA_ROOT
+    except AttributeError:
+        raise ImproperlyConfigured(u'Django Image Tools couldn\'t find the \'MEDIA_ROOT\'. '
+                                   u'Have you set it up in your settings.py?')
 
-UPLOAD_TO = get('UPLOAD_TO', '')
-if UPLOAD_TO is '':
+    if not os.path.exists(MEDIA_ROOT):
+        os.makedirs(MEDIA_ROOT)
+
+    DJANGO_IMAGE_TOOLS_CACHE_ROOT = os.path.join(MEDIA_ROOT, DJANGO_IMAGE_TOOLS_CACHE_DIR)
+
+    if not os.path.exists(DJANGO_IMAGE_TOOLS_CACHE_ROOT):
+        os.makedirs(DJANGO_IMAGE_TOOLS_CACHE_ROOT)
+
+    UPLOAD_TO = get('UPLOAD_TO', '')
     if hasattr(settings, 'DJANGO_IMAGE_TOOLS_UPLOAD_TO'):
         UPLOAD_TO = settings.DJANGO_IMAGE_TOOLS_UPLOAD_TO
-    else:
+    if UPLOAD_TO is '':
         UPLOAD_TO = settings.MEDIA_ROOT
 
-if not os.path.exists(UPLOAD_TO):
-    os.makedirs(UPLOAD_TO)
+    if not os.path.exists(UPLOAD_TO):
+        os.makedirs(UPLOAD_TO)
 
+
+update_settings()
