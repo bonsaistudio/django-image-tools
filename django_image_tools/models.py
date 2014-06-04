@@ -397,7 +397,8 @@ def render_image_with_size(imageObject, size):
         imageObject.subject_coordinates(),
         size.auto)
     #If the image is being resized to a bigger scale, set the was_upscaled flag
-    if pilImage.size[0] < size.width or pilImage.size[1] < size.height:
+    if (size.auto is not Size.AUTO_WIDTH and pilImage.size[0] < size.width) or \
+       (size.auto is not Size.AUTO_HEIGHT and pilImage.size[1] < size.height):
         imageObject.was_upscaled=True
         imageObject.save_bypassing_signals()
     image_path = path_for_image_with_size(imageObject, size)
