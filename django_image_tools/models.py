@@ -28,9 +28,23 @@ ORIGINAL_KEYWORD = u'original'
 
 
 class Size(models.Model):
+
+    AUTO_NOTHING = 0
+    AUTO_WIDTH = 1
+    AUTO_HEIGHT = 2
+
+    automatic_choices = (
+        (AUTO_NOTHING, _(u'Force aspect ratio')),
+        (AUTO_WIDTH, _(u'Resize based on width')),
+        (AUTO_HEIGHT, _(u'Resize based on height')),
+    )
+
     name = models.CharField(max_length=30)
-    width = models.PositiveSmallIntegerField()
-    height = models.PositiveSmallIntegerField()
+    width = models.PositiveSmallIntegerField(null=True, blank=True)
+    height = models.PositiveSmallIntegerField(null=True, blank=True)
+    auto = models.PositiveSmallIntegerField(choices=automatic_choices, help_text=_(u'Choose whether to force '
+                                                                                   u'aspect ratio or resize based on '
+                                                                                   u'width / height'))
 
     def __unicode__(self):
         return u'{0} - ({1}, {2})'.format(self.name, self.width, self.height)
@@ -38,7 +52,7 @@ class Size(models.Model):
     def clean(self):
         if PARAMS_SEPARATOR in self.name:
             raise ValidationError(
-                _('Your name cannot contain the string \'%(reserved_string)s\' as it is reserved.'),
+                _(u'Your name cannot contain the string \'%(reserved_string)s\' as it is reserved.'),
                 code='invalid',
                 params={'reserved_string': PARAMS_SEPARATOR},
             )
@@ -233,26 +247,38 @@ def md5Checksum(filePath):
         return m.hexdigest()
 
 
-def rescale_image(img, nsize, crop_point):
+def rescale_image(img, nsize, crop_point, force_aspect_ratio):
     # First of all, I'm rescaling to whatever the biggest size is
     osize = (img.size[0], img.size[1])
     original_width, original_height = (float(img.size[0]), float(img.size[1]))
-
-    new_width, new_height = (float(nsize[0]), float(nsize[1]))
-
     original_ratio = original_width/original_height
+
+    new_width, new_height = (0, 0)
+    if force_aspect_ratio == Size.AUTO_NOTHING:
+        new_width, new_height = (float(nsize[0]), float(nsize[1]))
+    else:
+        if force_aspect_ratio == Size.AUTO_HEIGHT:
+            new_width = float(nsize[0])
+            new_height = (float(new_width)/float(original_width))*float(original_height)
+        else:
+            new_height = float(nsize[1])
+            new_width = (float(new_height)/float(original_height))*float(original_width)
+
     new_ratio = new_width/new_height
 
     if original_ratio < new_ratio:
         #Resize by height
         first_step_height = original_width/new_ratio
         first_step_width = original_width
-        first_step_size = (first_step_width,first_step_height)
+        first_step_size = (first_step_width, first_step_height)
     else:
         #Resize by width
         first_step_width = new_ratio*original_height
         first_step_height = original_height
         first_step_size = (first_step_width, first_step_height)
+
+    if force_aspect_ratio is not Size.AUTO_NOTHING:
+        return img.resize((int(new_width), int(new_height)), PILImage.ANTIALIAS)
 
     #Recalculate the crop point to the new image sizes..
     crop_x, crop_y = crop_point
@@ -368,7 +394,8 @@ def render_image_with_size(imageObject, size):
     pilImage = PILImage.open(path_for_image(imageObject))
     resizedImage = rescale_image(pilImage,
         (size.width, size.height),
-        imageObject.subject_coordinates())
+        imageObject.subject_coordinates(),
+        size.auto)
     #If the image is being resized to a bigger scale, set the was_upscaled flag
     if pilImage.size[0] < size.width or pilImage.size[1] < size.height:
         imageObject.was_upscaled=True

@@ -44,33 +44,60 @@ class SimpleTest(TestCase):
 
         create_dummy_image(u'test_image', u'Test', u'Test', u'Test', u'None')
 
-        im = PILImage.new(u'RGB', (150, 100))
+        im = PILImage.new(u'RGB', (200, 100))
         im.save(u'{0}/test_input_bmp.bmp'.format(settings.DJANGO_IMAGE_TOOLS_CACHE_ROOT))
         imagew = Image(filename=u'wasbmp', title=u'Test', caption=u'Test', alt_text=u'Test', credit=u'none.')
         with open(u'{0}/test_input_bmp.bmp'.format(settings.DJANGO_IMAGE_TOOLS_CACHE_ROOT), u'rb') as f:
             imagew.image.save(u'{0}/testbmp.bmp'.format(settings.DJANGO_IMAGE_TOOLS_CACHE_ROOT), File(f))
 
-        size = Size(name='thumbnail', width=30, height=30)
+        size = Size(name='thumbnail', width=30, height=30, auto=Size.AUTO_NOTHING)
         size.save()
         self.size = size
 
-        longSize = Size(name='very_long', width=200, height=30)
+        longSize = Size(name='very_long', width=200, height=30, auto=Size.AUTO_NOTHING)
         longSize.save()
         self.long = longSize
 
-        tall = Size(name='very_tall', width=30, height=200)
+        tall = Size(name='very_tall', width=30, height=200, auto=Size.AUTO_NOTHING)
         tall.save()
         self.tall = tall
 
-        huge = Size(name='huge', width=2000, height=2000)
+        huge = Size(name='huge', width=2000, height=2000, auto=Size.AUTO_NOTHING)
         huge.save()
         self.huge = huge
 
         bw = Filter(name='grey_scaled', filter_type=0)
         bw.save()
 
+        self.auto_width = Size(name='auto_width', height=20, auto=Size.AUTO_WIDTH)
+        self.auto_width.save()
+
+        self.auto_height = Size(name='auto_height', width=20, auto=Size.AUTO_HEIGHT)
+        self.auto_height.save()
+
         self.imagepath = u'{0}/test_image.jpg'.format(settings.MEDIA_ROOT)
         self.imagewpath = u'{0}/wasbmp.jpg'.format(settings.MEDIA_ROOT)
+
+    def test_auto_width(self):
+        image = Image.objects.get(filename=u'test_image')
+
+        self.assertIsNotNone(image.get__auto_width)
+
+        img = PILImage.open(path_for_image_with_size(image, self.auto_width))
+
+        self.assertEqual(img.size[0], 40)
+        self.assertEqual(img.size[1], 20)
+
+    def test_auto_height(self):
+
+        image = Image.objects.get(filename=u'test_image')
+
+        self.assertIsNotNone(image.get__auto_height)
+
+        img = PILImage.open(path_for_image_with_size(image, self.auto_height))
+
+        self.assertEqual(img.size[0], 20)
+        self.assertEqual(img.size[1], 10)
 
     def testCreation(self):
         """
@@ -291,6 +318,10 @@ class SimpleTest(TestCase):
 
         delete_image(image)
         delete_image(imagew)
+
+        for s in Size.objects.all():
+            s.delete()
+
         # Delete the temporary images
         os.remove(u'{0}/test_input_bmp.bmp'.format(settings.DJANGO_IMAGE_TOOLS_CACHE_ROOT))
         os.remove(u'{0}/test_input.jpg'.format(settings.DJANGO_IMAGE_TOOLS_CACHE_ROOT))
