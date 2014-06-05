@@ -21,7 +21,14 @@ from django_image_tools.models import *
 
 def create_dummy_image(filename=u'Test_image', title=u'Title', caption=u'Caption', alt_text=u'Alt Text',
                        credit=u'Credit'):
+    # Create a dummy 100 x 50 image
     im = PILImage.new('RGB', (100, 50))
+    pix = im.load()
+    # Add a red pixel so we can test various stuff
+    radius = 9
+    for i in range(0, radius):
+        for j in range(0, radius):
+            pix[i, j] = (255, 0, 0)
     im.save(u'{0}/test_input.jpg'.format(settings.DJANGO_IMAGE_TOOLS_CACHE_ROOT))
     image = Image(filename=filename, title=title, caption=caption, alt_text=alt_text, credit=credit)
     with open(u'{0}/test_input.jpg'.format(settings.DJANGO_IMAGE_TOOLS_CACHE_ROOT), u'rb') as f:
@@ -41,7 +48,6 @@ class SimpleTest(TestCase):
         """
         Add a new image
         """
-
         create_dummy_image(u'test_image', u'Test', u'Test', u'Test', u'None')
 
         im = PILImage.new(u'RGB', (200, 100))
@@ -52,7 +58,7 @@ class SimpleTest(TestCase):
 
         size = Size(name='thumbnail', width=30, height=30, auto=Size.AUTO_NOTHING)
         size.save()
-        self.size = size
+        self.size_thumbnail = size
 
         longSize = Size(name='very_long', width=200, height=30, auto=Size.AUTO_NOTHING)
         longSize.save()
@@ -130,24 +136,102 @@ class SimpleTest(TestCase):
         image = Image.objects.get(filename=u'test_image')
         bw = Filter.objects.get(name=u'grey_scaled')
 
-        self.assertFalse(os.path.exists(path_for_image_with_filter_and_size(image, bw, self.size)))
+        self.assertFalse(os.path.exists(path_for_image_with_filter_and_size(image, bw, self.size_thumbnail)))
         self.assertEqual(image.get__grey_scaled__thumbnail,
-                         media_path_for_image_with_filter_and_size(image, bw, self.size))
-        self.assertTrue(os.path.exists(path_for_image_with_filter_and_size(image, bw, self.size)))
+                         media_path_for_image_with_filter_and_size(image, bw, self.size_thumbnail))
+        self.assertTrue(os.path.exists(path_for_image_with_filter_and_size(image, bw, self.size_thumbnail)))
+
+        # Test that the image was converted to grey scale
+        im = PILImage.open(path_for_image_with_filter_and_size(image, bw, self.size_thumbnail))
+        # Pixel in (1, 1) is red, but in the greyscale version all the channels
+        # Should have the same value
+        r, g, b = im.getpixel((1, 1))
+        self.assertTrue(r == g == b)
+
+    def test_cropping_other(self):
+        image = Image.objects.get(filename=u'test_image')
+
+        # Set the crop point to the bottom right
+        image.subject_position_vertical = 5
+        image.subject_position_horizontal = 5
+        image.save()
+
+        # Reload the image
+        image = Image.objects.get(filename=u'test_image')
+
+        # Delete the old thumbnail
+        if os.path.exists(path_for_image_with_size(image, self.size_thumbnail)):
+            os.remove(path_for_image_with_size(image, self.size_thumbnail))
+
+        # Get the thumbnail (which is smaller)
+        self.assertIsNotNone(image.get__thumbnail)
+
+        # Open the thumbnail in Pillow
+        im = PILImage.open(path_for_image_with_size(image, self.size_thumbnail))
+
+        # Check that the red pixel is not still there
+        r, g, b = im.getpixel((0, 0))
+
+        self.assertTrue(r == g == b == 0)
+
+    def test_cropping_center(self):
+        image = Image.objects.get(filename=u'test_image')
+
+        # Set the crop point to the top left
+        image.subject_position_vertical = 0
+        image.subject_position_horizontal = 0
+        image.save()
+
+        # Reload the image
+        image = Image.objects.get(filename=u'test_image')
+
+        # Delete the old thumbnail
+        if os.path.exists(path_for_image_with_size(image, self.size_thumbnail)):
+            os.remove(path_for_image_with_size(image, self.size_thumbnail))
+
+        # Get the thumbnail (which is smaller)
+        self.assertIsNotNone(image.get__thumbnail)
+
+        # Open the thumbnail in Pillow
+        im = PILImage.open(path_for_image_with_size(image, self.size_thumbnail))
+
+        # Check that the red pixel is still there
+        r, g, b = im.getpixel((0, 0))
+
+        # Due to compression approximation, the g and b values might not be zero, but they should be still lower than r
+
+        self.assertTrue(r != 0)
+        self.assertTrue(g == b)
+        self.assertTrue(g < r)
+
 
     def test_gaussian_blur(self):
         """
         Tests the gaussian blur
         """
-        im_filter = Filter(name=u'blurred', filter_type=Filter.GAUSSIAN_BLUR, numeric_parameter=2)
+        im_filter = Filter(name=u'blurred', filter_type=Filter.GAUSSIAN_BLUR, numeric_parameter=5)
         im_filter.save()
 
         image = Image.objects.get(filename=u'test_image')
 
-        path = media_path_for_image_with_filter_and_size(image, im_filter, self.size)
+        path = media_path_for_image_with_filter_and_size(image, im_filter, self.size_thumbnail)
         self.assertFalse(os.path.exists(path))
-        self.assertEqual(image.get__blurred__thumbnail, path)
-        self.assertTrue(os.path.exists(path_for_image_with_filter_and_size(image, im_filter, self.size)))
+        self.assertIsNotNone(image.get__blurred__original)
+        self.assertTrue(os.path.exists(path_for_image_with_filter_and_size(image, im_filter, None)))
+
+        # Image has a red pixel in (1, 1) and the rest is blurred. If it was blurred with radius (2) then the
+        # Pixel in coordinates (2, 1) should be reddish, the pixel in (3, 1) should be reddish too, but the pixel in
+        # (3, 1) should be black.
+
+        orig = PILImage.open(path_for_image(image))
+        blurred = PILImage.open(path_for_image_with_filter_and_size(image, im_filter, None))
+
+        # Check that the R value of the blurred image is about 1/5 of the original value on the same pixel
+
+        r, g, b = orig.getpixel((8, 8))
+        r2, g2, b2 = blurred.getpixel((8, 8))
+
+        self.assertAlmostEquals(4.0/5.0 * float(r), r2, None, None, 1.0/5.0 * float(r))
 
     def test_original_filter(self):
         """
@@ -182,20 +266,20 @@ class SimpleTest(TestCase):
         image = Image.objects.get(filename=u'test_image')
 
         self.assertEqual(image.get__thumbnail, u'/media/cache/test_image_thumbnail.jpg')
-        self.assertTrue(os.path.exists(path_for_image_with_size(image, self.size)))
+        self.assertTrue(os.path.exists(path_for_image_with_size(image, self.size_thumbnail)))
 
     def testLazyCreation(self):
         """
         Test that the new image is created on request
         """
-        self.size.width = 250
-        self.size.height = 250
-        self.size.save()
+        self.size_thumbnail.width = 250
+        self.size_thumbnail.height = 250
+        self.size_thumbnail.save()
         image = Image.objects.all()[0]
         self.assertEqual(image.get__thumbnail, u'/media/cache/test_image_thumbnail.jpg')
-        self.assertTrue(os.path.exists(path_for_image_with_size(image, self.size)))
+        self.assertTrue(os.path.exists(path_for_image_with_size(image, self.size_thumbnail)))
 
-        img = PILImage.open(path_for_image_with_size(image, self.size))
+        img = PILImage.open(path_for_image_with_size(image, self.size_thumbnail))
         self.assertTrue(img.size[0] == 250 and img.size[1] == 250)
 
     def test_rename_exception(self):
@@ -208,7 +292,7 @@ class SimpleTest(TestCase):
         self.assertRaises(ValidationError, image2.save)
 
     def test_unicode(self):
-        self.assertEqual(self.size.__unicode__(), u'thumbnail - (30, 30)')
+        self.assertEqual(self.size_thumbnail.__unicode__(), u'thumbnail - (30, 30)')
 
     def test_filter_unicode(self):
         bw = Filter.objects.get(name=u'grey_scaled')
@@ -246,7 +330,7 @@ class SimpleTest(TestCase):
         image = Image.objects.get(filename=u'test_image')
         # When there IS a thumbnail, the code should be this
         self.assertEqual(image.thumbnail(), u'<img src="/media/cache/test_image_thumbnail.jpg" width="100" height="100" />')
-        self.size.delete()
+        self.size_thumbnail.delete()
         image = Image.objects.get(filename=u'test_image')
         self.assertEqual(image.thumbnail(), u'<img src="/media/test_image.jpg" width="100" height="100" />')
 
