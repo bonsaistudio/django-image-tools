@@ -196,7 +196,7 @@ class SimpleTest(TestCase):
         im = PILImage.open(path_for_image_with_size(image, self.size_thumbnail))
 
         # Check that the red pixel is still there
-        r, g, b = im.getpixel((3, 3))
+        r, g, b = im.getpixel((1, 1))
 
         # Due to compression approximation, the g and b values might not be zero, but they should be still lower than r
 
