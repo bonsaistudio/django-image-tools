@@ -278,14 +278,14 @@ def rescale_image(img, nsize, crop_point, force_aspect_ratio):
         first_step_size = (first_step_width, first_step_height)
 
     if force_aspect_ratio is not Size.AUTO_NOTHING:
-        return img.resize((int(new_width), int(new_height)), PILImage.ANTIALIAS)
+        return img.resize((int(new_width), int(new_height)), PILImage.NEAREST)
 
     #Recalculate the crop point to the new image sizes..
     crop_x, crop_y = crop_point
-    rect_x = crop_x - first_step_width/2
-    rect_y = crop_y - first_step_height/2
+    rect_x = max(0, crop_x - first_step_width/2)
+    rect_y = max(0, crop_y - first_step_height/2)
 
-    img = img.crop(
+    res = img.crop(
         (
             int(rect_x),
             int(rect_y),
@@ -293,7 +293,11 @@ def rescale_image(img, nsize, crop_point, force_aspect_ratio):
             int(rect_y + first_step_height),
         )
     )
-    return img.resize(nsize, PILImage.ANTIALIAS)
+    res = res.resize(nsize, PILImage.NEAREST)
+    if nsize[0] == 30 and nsize[1] == 30 and crop_point == (0, 0):
+        img.save("/tmp/original.jpg")
+        res.save("/tmp/resized.jpg")
+    return res.resize(nsize, PILImage.NEAREST)
 
 
 def delete_image_with_size(image, size):

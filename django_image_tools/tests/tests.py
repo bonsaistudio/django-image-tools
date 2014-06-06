@@ -194,16 +194,13 @@ class SimpleTest(TestCase):
 
         # Open the thumbnail in Pillow
         im = PILImage.open(path_for_image_with_size(image, self.size_thumbnail))
-
-        # Check that the red pixel is still there
-        r, g, b = im.getpixel((1, 1))
+        pix = im.load()
 
         # Due to compression approximation, the g and b values might not be zero, but they should be still lower than r
+        r, g, b = pix[0, 0]
 
         self.assertTrue(r != 0)
-        self.assertTrue(g == b)
         self.assertTrue(g < r)
-
 
     def test_gaussian_blur(self):
         """
@@ -231,7 +228,7 @@ class SimpleTest(TestCase):
         r, g, b = orig.getpixel((8, 8))
         r2, g2, b2 = blurred.getpixel((8, 8))
 
-        self.assertAlmostEquals(4.0/5.0 * float(r), r2, None, None, 1.0/5.0 * float(r))
+        self.assertAlmostEqual(4.0/5.0 * float(r), r2, None, None, 1.0/5.0 * float(r))
 
     def test_original_filter(self):
         """
