@@ -20,7 +20,6 @@ from PIL import Image as PILImage, ImageFilter
 import os
 from django.db.models.signals import post_save, post_init, post_delete
 from . import settings
-from django.utils.translation import gettext as _
 
 PARAMS_SEPARATOR = u'__'
 FUNCTION_PREFIX = u'get{0}'.format(PARAMS_SEPARATOR)
@@ -34,17 +33,17 @@ class Size(models.Model):
     AUTO_HEIGHT = 2
 
     automatic_choices = (
-        (AUTO_NOTHING, _(u'Force aspect ratio')),
-        (AUTO_WIDTH, _(u'Resize based on width')),
-        (AUTO_HEIGHT, _(u'Resize based on height')),
+        (AUTO_NOTHING, u'Force aspect ratio'),
+        (AUTO_WIDTH, u'Resize based on width'),
+        (AUTO_HEIGHT, u'Resize based on height'),
     )
 
     name = models.CharField(max_length=30)
     width = models.PositiveSmallIntegerField(null=True, blank=True)
     height = models.PositiveSmallIntegerField(null=True, blank=True)
-    auto = models.PositiveSmallIntegerField(choices=automatic_choices, help_text=_(u'Choose whether to force '
+    auto = models.PositiveSmallIntegerField(choices=automatic_choices, help_text=u'Choose whether to force '
                                                                                    u'aspect ratio or resize based on '
-                                                                                   u'width / height'))
+                                                                                   u'width / height')
 
     def __unicode__(self):
         return u'{0} - ({1}, {2})'.format(self.name, self.width, self.height)
@@ -52,7 +51,7 @@ class Size(models.Model):
     def clean(self):
         if PARAMS_SEPARATOR in self.name:
             raise ValidationError(
-                _(u'Your name cannot contain the string \'%(reserved_string)s\' as it is reserved.'),
+                u'Your name cannot contain the string \'%(reserved_string)s\' as it is reserved.',
                 code='invalid',
                 params={'reserved_string': PARAMS_SEPARATOR},
             )
@@ -60,7 +59,7 @@ class Size(models.Model):
     def save(self, *args, **kwargs):
         if PARAMS_SEPARATOR in self.name:
             raise ValidationError(
-                _('Your name cannot contain the string \'%(reserved_string)s\' as it is reserved.'),
+                u'Your name cannot contain the string \'%(reserved_string)s\' as it is reserved.',
                 code='invalid',
                 params={'reserved_string': PARAMS_SEPARATOR},
             )
@@ -85,22 +84,22 @@ class Filter(models.Model):
     def clean(self):
         if PARAMS_SEPARATOR in self.name:
             raise ValidationError(
-                _('Your name cannot contain the string \'%(reserved_string)s\' as it is reserved.'),
+                u'Your name cannot contain the string \'%(reserved_string)s\' as it is reserved.',
                 code='invalid',
                 params={'reserved_string': PARAMS_SEPARATOR},
             )
         if self.filter_type == self.GAUSSIAN_BLUR and self.numeric_parameter is None:
-            raise ValidationError(_('Gaussian Blur needs the parameter to be specified'))
+            raise ValidationError('Gaussian Blur needs the parameter to be specified')
 
     def save(self, *args, **kwargs):
         if PARAMS_SEPARATOR in self.name:
             raise ValidationError(
-                _('Your name cannot contain the string \'%(reserved_string)s\' as it is reserved.'),
+                u'Your name cannot contain the string \'%(reserved_string)s\' as it is reserved.',
                 code='invalid',
                 params={'reserved_string': PARAMS_SEPARATOR},
             )
         if self.filter_type == self.GAUSSIAN_BLUR and self.numeric_parameter is None:
-            raise ValidationError(_('Gaussian Blur needs the parameter to be specified'))
+            raise ValidationError(u'Gaussian Blur needs the parameter to be specified')
         super(Filter, self).save(*args, **kwargs)
 
 

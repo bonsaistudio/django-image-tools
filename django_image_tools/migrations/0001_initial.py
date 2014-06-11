@@ -1,90 +1,56 @@
-# -*- coding: utf-8 -*-
-from south.utils import datetime_utils as datetime
-from south.db import db
-from south.v2 import SchemaMigration
-from django.db import models
+# encoding: utf8
+from __future__ import unicode_literals
+
+from django.db import models, migrations
+import django.core.validators
 
 
-class Migration(SchemaMigration):
+class Migration(migrations.Migration):
 
-    def forwards(self, orm):
-        # Adding model 'Size'
-        db.create_table(u'django_image_tools_size', (
-            (u'id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
-            ('name', self.gf('django.db.models.fields.CharField')(max_length=30)),
-            ('width', self.gf('django.db.models.fields.PositiveSmallIntegerField')(null=True, blank=True)),
-            ('height', self.gf('django.db.models.fields.PositiveSmallIntegerField')(null=True, blank=True)),
-            ('auto', self.gf('django.db.models.fields.PositiveSmallIntegerField')()),
-        ))
-        db.send_create_signal(u'django_image_tools', ['Size'])
+    dependencies = [
+    ]
 
-        # Adding model 'Filter'
-        db.create_table(u'django_image_tools_filter', (
-            (u'id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
-            ('name', self.gf('django.db.models.fields.CharField')(max_length=30)),
-            ('filter_type', self.gf('django.db.models.fields.PositiveSmallIntegerField')()),
-            ('numeric_parameter', self.gf('django.db.models.fields.FloatField')(null=True, blank=True)),
-        ))
-        db.send_create_signal(u'django_image_tools', ['Filter'])
-
-        # Adding model 'Image'
-        db.create_table(u'django_image_tools_image', (
-            (u'id', self.gf('django.db.models.fields.AutoField')(primary_key=True)),
-            ('image', self.gf('django.db.models.fields.files.ImageField')(max_length=100)),
-            ('checksum', self.gf('django.db.models.fields.CharField')(max_length=32)),
-            ('filename', self.gf('django.db.models.fields.SlugField')(max_length=50)),
-            ('subject_position_horizontal', self.gf('django.db.models.fields.PositiveSmallIntegerField')(default=2)),
-            ('subject_position_vertical', self.gf('django.db.models.fields.PositiveSmallIntegerField')(default=2)),
-            ('was_upscaled', self.gf('django.db.models.fields.BooleanField')(default=False)),
-            ('title', self.gf('django.db.models.fields.CharField')(max_length=120)),
-            ('caption', self.gf('django.db.models.fields.TextField')()),
-            ('alt_text', self.gf('django.db.models.fields.CharField')(max_length=120)),
-            ('credit', self.gf('django.db.models.fields.TextField')(null=True, blank=True)),
-        ))
-        db.send_create_signal(u'django_image_tools', ['Image'])
-
-
-    def backwards(self, orm):
-        # Deleting model 'Size'
-        db.delete_table(u'django_image_tools_size')
-
-        # Deleting model 'Filter'
-        db.delete_table(u'django_image_tools_filter')
-
-        # Deleting model 'Image'
-        db.delete_table(u'django_image_tools_image')
-
-
-    models = {
-        u'django_image_tools.filter': {
-            'Meta': {'object_name': 'Filter'},
-            'filter_type': ('django.db.models.fields.PositiveSmallIntegerField', [], {}),
-            u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'name': ('django.db.models.fields.CharField', [], {'max_length': '30'}),
-            'numeric_parameter': ('django.db.models.fields.FloatField', [], {'null': 'True', 'blank': 'True'})
-        },
-        u'django_image_tools.image': {
-            'Meta': {'object_name': 'Image'},
-            'alt_text': ('django.db.models.fields.CharField', [], {'max_length': '120'}),
-            'caption': ('django.db.models.fields.TextField', [], {}),
-            'checksum': ('django.db.models.fields.CharField', [], {'max_length': '32'}),
-            'credit': ('django.db.models.fields.TextField', [], {'null': 'True', 'blank': 'True'}),
-            'filename': ('django.db.models.fields.SlugField', [], {'max_length': '50'}),
-            u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'image': ('django.db.models.fields.files.ImageField', [], {'max_length': '100'}),
-            'subject_position_horizontal': ('django.db.models.fields.PositiveSmallIntegerField', [], {'default': '2'}),
-            'subject_position_vertical': ('django.db.models.fields.PositiveSmallIntegerField', [], {'default': '2'}),
-            'title': ('django.db.models.fields.CharField', [], {'max_length': '120'}),
-            'was_upscaled': ('django.db.models.fields.BooleanField', [], {'default': 'False'})
-        },
-        u'django_image_tools.size': {
-            'Meta': {'object_name': 'Size'},
-            'auto': ('django.db.models.fields.PositiveSmallIntegerField', [], {}),
-            'height': ('django.db.models.fields.PositiveSmallIntegerField', [], {'null': 'True', 'blank': 'True'}),
-            u'id': ('django.db.models.fields.AutoField', [], {'primary_key': 'True'}),
-            'name': ('django.db.models.fields.CharField', [], {'max_length': '30'}),
-            'width': ('django.db.models.fields.PositiveSmallIntegerField', [], {'null': 'True', 'blank': 'True'})
-        }
-    }
-
-    complete_apps = ['django_image_tools']
+    operations = [
+        migrations.CreateModel(
+            name=b'Filter',
+            fields=[
+                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                (b'name', models.CharField(max_length=30)),
+                (b'filter_type', models.PositiveSmallIntegerField(help_text='The type of filter to apply', choices=[(0, b'Grey scale')])),
+            ],
+            options={
+            },
+            bases=(models.Model,),
+        ),
+        migrations.CreateModel(
+            name=b'Size',
+            fields=[
+                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                (b'name', models.CharField(max_length=30)),
+                (b'width', models.PositiveSmallIntegerField()),
+                (b'height', models.PositiveSmallIntegerField()),
+            ],
+            options={
+            },
+            bases=(models.Model,),
+        ),
+        migrations.CreateModel(
+            name=b'Image',
+            fields=[
+                ('id', models.AutoField(verbose_name='ID', serialize=False, auto_created=True, primary_key=True)),
+                (b'image', models.ImageField(help_text='uploading an image will take time. DO NOT PUSH THE SAVE BUTTON AGAIN UNTIL THE IMAGE HAS BEEN SAVED!', upload_to=b'upload')),
+                (b'checksum', models.CharField(max_length=32)),
+                (b'filename', models.SlugField(help_text='If you want to rename the image, write here the new filename', validators=[django.core.validators.RegexValidator(regex=b'^[A-Za-z\\-\\_0-9]*$', message="Filename can only contain letters, numbers and '-'.No extensions allowed (I'll put it for you")])),
+                (b'subject_position_horizontal', models.PositiveSmallIntegerField(default=2, help_text='The system will create other imagesfrom this, based on the image sizes needed.In some cases, it is necessary to cropthe image. By selecting where the subject is, the croppingcan be more accurate.', verbose_name='Subject Horizontal Position', choices=[(0, 'Left'), (1, '1/3'), (2, 'Center'), (3, '2/3'), (4, 'Right')])),
+                (b'subject_position_vertical', models.PositiveSmallIntegerField(default=2, help_text='The system will create other imagesfrom this, based on the image sizes needed.In some cases, it is necessary to cropthe image. By selecting where the subject is, the croppingcan be more accurate.', verbose_name='Subject Vertical Position', choices=[(0, 'Top'), (1, '1/3'), (2, 'Center'), (3, '2/3'), (4, 'Bottom')])),
+                (b'was_upscaled', models.BooleanField(default=False, verbose_name='insufficient_resolution')),
+                (b'title', models.CharField(help_text='In some pages it might be necessary to display some informations.', max_length=120)),
+                (b'caption', models.TextField()),
+                (b'alt_text', models.CharField(help_text='This is the text that allows blind people (and google) know what the image is about ', max_length=120)),
+                (b'credit', models.TextField(null=True, blank=True)),
+            ],
+            options={
+            },
+            bases=(models.Model,),
+        ),
+    ]
