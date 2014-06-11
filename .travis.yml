@@ -17,7 +17,7 @@ install:
   - pip install coveralls
   - pip install . --use-mirrors
 script:
-  - python manage.py syncdb --noinput && coverage run --source=django_image_tools manage.py test django_image_tools
+  - python manage.py syncdb --noinput && coverage run --source=django_image_tools --omit=*migrations*,*admin* manage.py test django_image_tools
 after_success:
   - coveralls
 matrix:

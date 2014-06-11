@@ -9,4 +9,7 @@ django_image_tools/settings.py
 django_image_tools/urls.py
 django_image_tools/views.py
 django_image_tools/migrations/0001_initial.py
+django_image_tools/migrations/0002_filter_numeric_parameter.py
+django_image_tools/migrations/0003_added_numeric_parameter.py
+django_image_tools/migrations/0004_auto_added_auto_field.py
 django_image_tools/migrations/__init__.py
