@@ -50,6 +50,13 @@ INSTALLED_APPS = (
     'django_image_tools', 
 )
 
+import django
+
+if django.VERSION[1] < 7:
+    INSTALLED_APPS += (
+        'south',
+    )
+    SOUTH_TESTS_MIGRATE = False
 
 PROJECT_ROOT = os.path.dirname(os.path.realpath(__file__))
 
