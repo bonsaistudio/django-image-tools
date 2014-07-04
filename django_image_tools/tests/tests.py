@@ -12,10 +12,12 @@
 # Copyright (C) Bonsai Studio
 
 from __future__ import absolute_import
+from os import listdir
 from django.core.exceptions import ImproperlyConfigured
 from django.core.files import File
 from django.conf import settings as django_settings
 from django.test import TestCase
+from os.path import isfile, join
 from django_image_tools.models import *
 
 
@@ -159,10 +161,6 @@ class SimpleTest(TestCase):
         # Reload the image
         image = Image.objects.get(filename=u'test_image')
 
-        # Delete the old thumbnail
-        if os.path.exists(path_for_image_with_size(image, self.size_thumbnail)):
-            os.remove(path_for_image_with_size(image, self.size_thumbnail))
-
         # Get the thumbnail (which is smaller)
         self.assertIsNotNone(image.get__thumbnail)
 
@@ -184,10 +182,6 @@ class SimpleTest(TestCase):
 
         # Reload the image
         image = Image.objects.get(filename=u'test_image')
-
-        # Delete the old thumbnail
-        if os.path.exists(path_for_image_with_size(image, self.size_thumbnail)):
-            os.remove(path_for_image_with_size(image, self.size_thumbnail))
 
         # Get the thumbnail (which is smaller)
         self.assertIsNotNone(image.get__thumbnail)
@@ -364,18 +358,22 @@ class SimpleTest(TestCase):
         django_settings.MEDIA_ROOT = mr
         settings.update_settings()
 
-
     def test_folders_are_created(self):
-        if os.listdir(settings.MEDIA_ROOT) != []:
-            #Cannot run tests, there are some files in the media root
-            self.assertEqual(1, 1, u"Test did not run as the MEDIA_ROOT is not empty")
-        else:
-            os.remove(settings.MEDIA_ROOT)
-            os.remove(settings.UPLOAD_TO)
-            self.assertFalse(os.path.exists(settings.MEDIA_ROOT))
-            settings.update_settings()
-            self.assertTrue(os.path.exists(settings.MEDIA_ROOT))
-            self.assertTrue(os.path.exists(settings.UPLOAD_TO))
+        self.assertTrue(os.path.exists(settings.MEDIA_ROOT))
+
+    def test_convert_to_png_will_not_delete_files(self):
+        """
+        Tests that even by brutally calling convert_to_png, the method will
+        throw an exception since an image with the same name already exists.
+        """
+        im1 = Image.objects.get(filename=u'test_image')
+        im2 = Image.objects.get(filename=u'wasbmp')
+
+        im1.filename = im2.filename
+
+        callable_function = lambda: convert_to_png(None, instance=im1)
+
+        self.assertRaises(ValidationError, callable_function)
 
     def test_settings_fallback(self):
         django_settings.UPLOAD_TO = 'upload_to'

@@ -33,6 +33,121 @@ The folders will be created if they do not exist.
 
 
 That's it, you're good to go now.
+Let's create a couple of models containing images!
 
-Login to your admin panel and check out the options!
+
+Example models
+--------------
+
+Let's say you have a "Person" model and you want to include an Avatar, or a profile pic. Here's how you do it
+
+::
+
+    ....
+    from django_image_tools.models import Image
+
+    class Person(models.Model):
+
+        first_name = models.CharField(max_length=255)
+        second_name = models.CharField(max_length=255)
+        ...
+
+        picture = models.ForeignKey(Image)
+
+
+
+You can also (obviously) use a ManyToMany field, for example:
+
+::
+
+    ....
+    from django_image_tools.models import Image
+
+    class Slideshow(models.Model):
+       title = models.CharField(max_length=255)
+       description = models.TextField()
+       ...
+
+       slides = models.ManyToManyField(Image)
+
+
+
+That's all you need to do when dealing with the models. The next step is creating your custom filters and sizes in the
+admin panel.
+
+For example, here I created a "blurred" filter (Gaussian filter, radius 2)
+
+
+.. image:: /_static/filter_blurred.png
+
+
+a "thumbnail" size..
+
+.. image:: /_static/size_thumbnail.png
+
+Then, in your templates, you can use them like this:
+
+::
+
+    # Displaying a thumbnail
+    <img src={{ person.image.get__thumbnail }} />
+
+    # Displaying a blurred thumbnail
+    <img src={{ person.image.get__blurred__thumbnail }} />
+
+    # Displaying the original image
+    <img src={{ person.image.get__original }} />
+
+    # Displaying the blurred (original) image
+    <img src={{ person.image.get__blurred__original }} />
+
+
+Including thumbnails in your admin
+----------------------------------
+
+You can include thumbnail in your admin panel
+
+Just look at this admin.py file
+
+::
+
+    from __future__ import absolute_import
+    from django.contrib import admin
+    from .models import Person
+
+
+    class PersonAdmin(admin.ModelAdmin):
+        list_display = ('thumbnail', 'first_name', 'second_name')
+
+    admin.site.register(Person, PersonAdmin)
+
+
+You will also need to tweak your model so that it uses the ``thumbnail`` method of the correct image.
+Here's an example:
+
+::
+
+    from django.db import models
+    from django_image_tools.models import Image
+
+
+    class Person(models.Model):
+        first_name = models.CharField(max_length=255)
+        second_name = models.CharField(max_length=255)
+
+        picture = models.ForeignKey(Image)
+
+        # Add the thumbnail method and grab the image thumbnail
+        def thumbnail(self):
+            return self.picture.thumbnail()
+
+        # Now you only need to tell django that this thumbnail field is safe
+        thumbnail.allow_tags = True
+
+
+Please note that in this case we used the ``picture.thumbnail()`` method, and not the ``picture.get__thumbnail``
+because this particular method is designed to output the whole 'img' tag for the django admin panel.
+
+If you have any problem, make sure you followed `Django's guide to serve static and user uploaded files
+<https://docs.djangoproject.com/en/1.6/howto/static-files/>`_ !
 

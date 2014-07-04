@@ -73,8 +73,95 @@
 </pre></div>
 </div>
 <p>The folders will be created if they do not exist.</p>
-<p>That&#8217;s it, you&#8217;re good to go now.</p>
-<p>Login to your admin panel and check out the options!</p>
+<p>That&#8217;s it, you&#8217;re good to go now.
+Let&#8217;s create a couple of models containing images!</p>
+</div>
+<div class="section" id="example-models">
+<h2>Example models<a class="headerlink" href="#example-models" title="Permalink to this headline">¶</a></h2>
+<p>Let&#8217;s say you have a &#8220;Person&#8221; model and you want to include an Avatar, or a profile pic. Here&#8217;s how you do it</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="o">....</span>
+<span class="kn">from</span> <span class="nn">django_image_tools.models</span> <span class="kn">import</span> <span class="n">Image</span>
+
+<span class="k">class</span> <span class="nc">Person</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
+
+    <span class="n">first_name</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">CharField</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">255</span><span class="p">)</span>
+    <span class="n">second_name</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">CharField</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">255</span><span class="p">)</span>
+    <span class="o">...</span>
+
+    <span class="n">picture</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="n">Image</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>You can also (obviously) use a ManyToMany field, for example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="o">....</span>
+<span class="kn">from</span> <span class="nn">django_image_tools.models</span> <span class="kn">import</span> <span class="n">Image</span>
+
+<span class="k">class</span> <span class="nc">Slideshow</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
+   <span class="n">title</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">CharField</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">255</span><span class="p">)</span>
+   <span class="n">description</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">TextField</span><span class="p">()</span>
+   <span class="o">...</span>
+
+   <span class="n">slides</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">ManyToManyField</span><span class="p">(</span><span class="n">Image</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>That&#8217;s all you need to do when dealing with the models. The next step is creating your custom filters and sizes in the
+admin panel.</p>
+<p>For example, here I created a &#8220;blurred&#8221; filter (Gaussian filter, radius 2)</p>
+<img alt="_images/filter_blurred.png" src="_images/filter_blurred.png" />
+<p>a &#8220;thumbnail&#8221; size..</p>
+<img alt="_images/size_thumbnail.png" src="_images/size_thumbnail.png" />
+<p>Then, in your templates, you can use them like this:</p>
+<div class="highlight-python"><div class="highlight"><pre># Displaying a thumbnail
+&lt;img src={{ person.image.get__thumbnail }} /&gt;
+
+# Displaying a blurred thumbnail
+&lt;img src={{ person.image.get__blurred__thumbnail }} /&gt;
+
+# Displaying the original image
+&lt;img src={{ person.image.get__original }} /&gt;
+
+# Displaying the blurred (original) image
+&lt;img src={{ person.image.get__blurred__original }} /&gt;
+</pre></div>
+</div>
+</div>
+<div class="section" id="including-thumbnails-in-your-admin">
+<h2>Including thumbnails in your admin<a class="headerlink" href="#including-thumbnails-in-your-admin" title="Permalink to this headline">¶</a></h2>
+<p>You can include thumbnail in your admin panel</p>
+<p>Just look at this admin.py file</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">__future__</span> <span class="kn">import</span> <span class="n">absolute_import</span>
+<span class="kn">from</span> <span class="nn">django.contrib</span> <span class="kn">import</span> <span class="n">admin</span>
+<span class="kn">from</span> <span class="nn">.models</span> <span class="kn">import</span> <span class="n">Person</span>
+
+
+<span class="k">class</span> <span class="nc">PersonAdmin</span><span class="p">(</span><span class="n">admin</span><span class="o">.</span><span class="n">ModelAdmin</span><span class="p">):</span>
+    <span class="n">list_display</span> <span class="o">=</span> <span class="p">(</span><span class="s">&#39;thumbnail&#39;</span><span class="p">,</span> <span class="s">&#39;first_name&#39;</span><span class="p">,</span> <span class="s">&#39;second_name&#39;</span><span class="p">)</span>
+
+<span class="n">admin</span><span class="o">.</span><span class="n">site</span><span class="o">.</span><span class="n">register</span><span class="p">(</span><span class="n">Person</span><span class="p">,</span> <span class="n">PersonAdmin</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>You will also need to tweak your model so that it uses the <tt class="docutils literal"><span class="pre">thumbnail</span></tt> method of the correct image.
+Here&#8217;s an example:</p>
+<div class="highlight-python"><div class="highlight"><pre><span class="kn">from</span> <span class="nn">django.db</span> <span class="kn">import</span> <span class="n">models</span>
+<span class="kn">from</span> <span class="nn">django_image_tools.models</span> <span class="kn">import</span> <span class="n">Image</span>
+
+
+<span class="k">class</span> <span class="nc">Person</span><span class="p">(</span><span class="n">models</span><span class="o">.</span><span class="n">Model</span><span class="p">):</span>
+    <span class="n">first_name</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">CharField</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">255</span><span class="p">)</span>
+    <span class="n">second_name</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">CharField</span><span class="p">(</span><span class="n">max_length</span><span class="o">=</span><span class="mi">255</span><span class="p">)</span>
+
+    <span class="n">picture</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">ForeignKey</span><span class="p">(</span><span class="n">Image</span><span class="p">)</span>
+
+    <span class="c"># Add the thumbnail method and grab the image thumbnail</span>
+    <span class="k">def</span> <span class="nf">thumbnail</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">picture</span><span class="o">.</span><span class="n">thumbnail</span><span class="p">()</span>
+
+    <span class="c"># Now you only need to tell django that this thumbnail field is safe</span>
+    <span class="n">thumbnail</span><span class="o">.</span><span class="n">allow_tags</span> <span class="o">=</span> <span class="bp">True</span>
+</pre></div>
+</div>
+<p>Please note that in this case we used the <tt class="docutils literal"><span class="pre">picture.thumbnail()</span></tt> method, and not the <tt class="docutils literal"><span class="pre">picture.get__thumbnail</span></tt>
+because this particular method is designed to output the whole &#8216;img&#8217; tag for the django admin panel.</p>
+<p>If you have any problem, make sure you followed <a class="reference external" href="https://docs.djangoproject.com/en/1.6/howto/static-files/">Django&#8217;s guide to serve static and user uploaded files</a> !</p>
 </div>
 </div>
 
@@ -88,6 +175,8 @@
   <ul>
 <li><a class="reference internal" href="#">Quick Start</a><ul>
 <li><a class="reference internal" href="#configuration">Configuration</a></li>
+<li><a class="reference internal" href="#example-models">Example models</a></li>
+<li><a class="reference internal" href="#including-thumbnails-in-your-admin">Including thumbnails in your admin</a></li>
 </ul>
 </li>
 </ul>
