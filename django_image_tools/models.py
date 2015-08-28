@@ -373,7 +373,7 @@ def path_for_image(imageObject, force_extension=None):
     filename, extension = os.path.splitext(os.path.basename(imageObject.image.name))
     if force_extension is not None:
         extension = force_extension
-    return u'{0}/{1}{2}'.format(settings.MEDIA_ROOT, imageObject.filename, extension)
+    return u'{0}/{1}{2}'.format(settings.MEDIA_ROOT, filename, extension)
 
 
 def image_with_size(image, size):
