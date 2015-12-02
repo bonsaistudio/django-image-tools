@@ -20,10 +20,13 @@ def get(key, default):
     return getattr(settings, key, default)
 
 DJANGO_IMAGE_TOOLS_CACHE_DIR = get('DJANGO_IMAGE_TOOLS_CACHE_DIR', 'cache')
+DJANGO_IMAGE_TOOLS_SIZES = get('DJANGO_IMAGE_TOOLS_SIZES', {'thumbnail': {'width': 50, 'height': 50}})
+DJANGO_IMAGE_TOOLS_FILTERS = get('DJANGO_IMAGE_TOOLS_FILTERS', {})
 MEDIA_URL = get('MEDIA_URL', '/media/')
 DJANGO_IMAGE_TOOLS_CACHE_ROOT = ''
 MEDIA_ROOT = ''
 UPLOAD_TO = ''
+
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
@@ -56,6 +59,9 @@ def update_settings():
     global DJANGO_IMAGE_TOOLS_CACHE_ROOT
     global MEDIA_ROOT
     global UPLOAD_TO
+    global DJANGO_IMAGE_TOOLS_SIZES
+    global DJANGO_IMAGE_TOOLS_FILTERS
+
 
     try:
         MEDIA_ROOT = settings.MEDIA_ROOT
@@ -79,6 +85,7 @@ def update_settings():
 
     if not os.path.exists(UPLOAD_TO):
         os.makedirs(UPLOAD_TO)
+
 
 
 update_settings()

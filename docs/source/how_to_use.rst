@@ -17,7 +17,7 @@ And what if I wanted to change the effect after the template is ready?
 The same thing applies for image sizes, what if you suddenly needed your images to be bigger or smaller?
 
 Django Image Tools allows you to create specific filters and sizes for your images, and bind those filters to
-your images through their name, so you can change the filter parameters and the image size from the admin panel itself,
+your images through their name, so you can change the filter parameters and the image size from your settings file,
 and those changes will automatically be applied to all of the bound images in your templates. Now your templates
 will remain untouched even if you decide to change a filter, or even the size of your images.
 
@@ -39,7 +39,7 @@ Filter names should be applied before size names. Size names are mandatory.
 To activate django_image_tools, you need to call a ``get__`` attribute on the image.
 
 For example, if you want the path for a size named 'thumbnail', you should define a new Size called 'thumbnail' on
-the admin panel. Then, in your templates you should use:
+your settings file. Then, in your templates you should use:
 
 ::
 
@@ -63,22 +63,55 @@ Obviously, you cannot add filters / sizes whose name contains a double '_'.
 Size & Cropping
 ---------------
 
-You will find in the admin panel the 'django_image_tools' option. You can enter all the sizes
-you're going to use in your website there.
-The options for each size are:
+Sizes and filters are defined in your settings file. Previous versions of this app had them defined into the admin
+panel, but we soon discovered how this was a real pain, especially when trying to work on multiple environments.
 
-- Name
-- Width  (auto)
-- Height (auto)
+Here is a simple settings definition:
 
-All of the sizes you create will be available for the images the user will upload through its name.
+```
+
+DJANGO_IMAGE_TOOLS_SIZES = {
+    'thumbnail': {
+        'width': 30,
+        'height': 30,
+        'auto': None
+    },
+    'very_long': {
+        'width': 200,
+        'height': 30,
+        'auto': None
+    },
+    'very_tall': {
+        'width': 30,
+        'height': 200,
+        'auto': None
+    },
+    'huge': {
+        'width': 2000,
+        'height': 2000,
+        'auto': None
+    },
+    'auto_width': {
+        'width': 0,
+        'height': 20,
+        'auto': 'WIDTH'
+    },
+    'auto_height': {
+        'width': 20,
+        'height': 0,
+        'auto': 'HEIGHT'
+    },
+}
+
+```
+
+All of the sizes you create will be available for the images the user will upload through their name.
 For example, you can have a 'thumbnail' 250x250 size, and every image you upload will have the ``get__thumbnail``
 method that will output the path for the image with the requested size.
 
 Having 'auto' height, for exmaple, means that the image will be resized to match the given width, and keep the original
 aspect ratio (This is useful for example, if you want to create a *pinterest* board).
-
-Of course, you can only have auto height or auto width, but not both.
+The 'auto' attribute can be either None (or just not defined), 'WIDTH', or 'HEIGHT'.
 
 In the template, to display an image field, all you have to do is:
 
@@ -124,11 +157,26 @@ Filters
 -------
 
 Django Image tools also works great for applying filters to your images.
-To define a filter, just add it in the admin panel, and tweak it with its parameters until you get the desired effect.
+To define a filter, just add it in your settings file. Here's an example.
+
+```
+DJANGO_IMAGE_TOOLS_FILTERS = {
+    'grey_scaled': {
+        'filter_type': 'GREYSCALE'
+    },
+    'blurred': {
+        'filter_type': 'GAUSSIAN_BLUR',
+        'value': 5
+    }
+}
+```
 
 For example, let's say you defined a filter named 'blurred' with a Gaussian Blur and you want
 a blurred thumbnail of your image.
 This should be the image tag.
+
+Currently these are the only two filters available, we will add them if the projects becomes more popular and / or we'll
+need them.
 
 ::
 

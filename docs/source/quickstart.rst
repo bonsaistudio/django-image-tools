@@ -31,6 +31,53 @@ The minimum required settings you should add in your settings.py are:
 
 The folders will be created if they do not exist.
 
+You should also add your filters and sizes in your settings file, like this:
+
+::
+
+    DJANGO_IMAGE_TOOLS_SIZES = {
+        'thumbnail': {
+            'width': 30,
+            'height': 30,
+            'auto': None
+        },
+        'very_long': {
+            'width': 200,
+            'height': 30,
+            'auto': None
+        },
+        'very_tall': {
+            'width': 30,
+            'height': 200,
+            'auto': None
+        },
+        'huge': {
+            'width': 2000,
+            'height': 2000,
+            'auto': None
+        },
+        'auto_width': {
+            'width': 0,
+            'height': 20,
+            'auto': 'WIDTH'
+        },
+        'auto_height': {
+            'width': 20,
+            'height': 0,
+            'auto': 'HEIGHT'
+        },
+    }
+
+    DJANGO_IMAGE_TOOLS_FILTERS = {
+        'grey_scaled': {
+            'filter_type': 'GREYSCALE'
+        },
+        'blurred': {
+            'filter_type': 'GAUSSIAN_BLUR',
+            'value': 5
+        }
+    }
+
 
 That's it, you're good to go now.
 Let's create a couple of models containing images!
@@ -72,18 +119,7 @@ You can also (obviously) use a ManyToMany field, for example:
 
 
 
-That's all you need to do when dealing with the models. The next step is creating your custom filters and sizes in the
-admin panel.
-
-For example, here I created a "blurred" filter (Gaussian filter, radius 2)
-
-
-.. image:: /_static/filter_blurred.png
-
-
-a "thumbnail" size..
-
-.. image:: /_static/size_thumbnail.png
+That's all you need to do when dealing with the models.
 
 Then, in your templates, you can use them like this:
 

@@ -59,30 +59,17 @@ class SimpleTest(TestCase):
         with open(u'{0}/test_input_bmp.bmp'.format(settings.DJANGO_IMAGE_TOOLS_CACHE_ROOT), u'rb') as f:
             imagew.image.save(u'testbmp.bmp', File(f))
 
-        size = Size(name='thumbnail', width=30, height=30, auto=Size.AUTO_NOTHING)
-        size.save()
-        self.size_thumbnail = size
+        self.size_thumbnail = get_size_with_name('thumbnail')
 
-        longSize = Size(name='very_long', width=200, height=30, auto=Size.AUTO_NOTHING)
-        longSize.save()
-        self.long = longSize
+        self.long = get_size_with_name('very_long')
 
-        tall = Size(name='very_tall', width=30, height=200, auto=Size.AUTO_NOTHING)
-        tall.save()
-        self.tall = tall
+        self.tall = get_size_with_name('very_tall')
 
-        huge = Size(name='huge', width=2000, height=2000, auto=Size.AUTO_NOTHING)
-        huge.save()
-        self.huge = huge
+        self.huge = get_size_with_name('huge')
 
-        bw = Filter(name='grey_scaled', filter_type=0)
-        bw.save()
+        self.auto_width = get_size_with_name('auto_width')
 
-        self.auto_width = Size(name='auto_width', height=20, auto=Size.AUTO_WIDTH)
-        self.auto_width.save()
-
-        self.auto_height = Size(name='auto_height', width=20, auto=Size.AUTO_HEIGHT)
-        self.auto_height.save()
+        self.auto_height = get_size_with_name('auto_height')
 
         self.imagepath = u'{0}/test_image.jpg'.format(settings.MEDIA_ROOT)
         self.imagewpath = u'{0}/wasbmp.jpg'.format(settings.MEDIA_ROOT)
@@ -136,7 +123,7 @@ class SimpleTest(TestCase):
         Test that applying a filter results in a new image created correctly.
         """
         image = Image.objects.get(filename=u'test_image')
-        bw = Filter.objects.get(name=u'grey_scaled')
+        bw = get_filter_with_name('grey_scaled')
 
         self.assertFalse(os.path.exists(path_for_image_with_filter_and_size(image, bw, self.size_thumbnail)))
         self.assertEqual(image.get__grey_scaled__thumbnail,
@@ -167,10 +154,10 @@ class SimpleTest(TestCase):
         # Open the thumbnail in Pillow
         im = PILImage.open(path_for_image_with_size(image, self.size_thumbnail))
 
-        # Check that the red pixel is not still there
+        # Check that the red pixel is still there
         r, g, b = im.getpixel((0, 0))
 
-        self.assertTrue(r == g == b == 0)
+        self.assertTrue(r != g == b == 0)
 
     def test_cropping_center(self):
         image = Image.objects.get(filename=u'test_image')
@@ -200,8 +187,7 @@ class SimpleTest(TestCase):
         """
         Tests the gaussian blur
         """
-        im_filter = Filter(name=u'blurred', filter_type=Filter.GAUSSIAN_BLUR, numeric_parameter=5)
-        im_filter.save()
+        im_filter = get_filter_with_name('blurred')
 
         image = Image.objects.get(filename=u'test_image')
 
@@ -229,7 +215,7 @@ class SimpleTest(TestCase):
         Test that applying a filter results in a new image created correctly.
         """
         image = Image.objects.get(filename=u'test_image')
-        bw = Filter.objects.get(name=u'grey_scaled')
+        bw = get_filter_with_name('grey_scaled')
 
         self.assertFalse(os.path.exists(path_for_image_with_filter_and_size(image, bw, None)))
         self.assertEqual(image.get__grey_scaled__original,
@@ -263,15 +249,13 @@ class SimpleTest(TestCase):
         """
         Test that the new image is created on request
         """
-        self.size_thumbnail.width = 250
-        self.size_thumbnail.height = 250
-        self.size_thumbnail.save()
         image = Image.objects.all()[0]
+        self.assertFalse(os.path.exists(path_for_image_with_size(image, self.size_thumbnail)))
         self.assertEqual(image.get__thumbnail, u'/media/cache/test_image_thumbnail.jpg')
         self.assertTrue(os.path.exists(path_for_image_with_size(image, self.size_thumbnail)))
 
         img = PILImage.open(path_for_image_with_size(image, self.size_thumbnail))
-        self.assertTrue(img.size[0] == 250 and img.size[1] == 250)
+        self.assertTrue(img.size[0] == self.size_thumbnail.width and img.size[1] == self.size_thumbnail.height)
 
     def test_rename_exception(self):
         """
@@ -281,13 +265,6 @@ class SimpleTest(TestCase):
         image2 = Image.objects.get(filename=u'wasbmp')
         image2.filename = image.filename
         self.assertRaises(ValidationError, image2.save)
-
-    def test_unicode(self):
-        self.assertEqual(self.size_thumbnail.__unicode__(), u'thumbnail - (30, 30)')
-
-    def test_filter_unicode(self):
-        bw = Filter.objects.get(name=u'grey_scaled')
-        self.assertEqual(bw.__unicode__(), u'grey_scaled')
 
     def test_non_existing_parameters(self):
         image = Image.objects.get(filename=u'test_image')
@@ -302,28 +279,19 @@ class SimpleTest(TestCase):
         image = Image.objects.get(filename=u'test_image')
         self.assertRaises(AttributeError, lambda: image.non_existing_property)
 
-    def test_gaussian_blur_parameter_exception(self):
-        gaussian_filter = Filter(name=u'gaussian', filter_type=Filter.GAUSSIAN_BLUR)
-        self.assertRaises(ValidationError, gaussian_filter.save)
-        self.assertRaises(ValidationError, gaussian_filter.clean)
-
-    def test_reserved_keywords_in_size(self):
-        error_causing = Size(name=u'huge__with_double_underscore', width=2000, height=2000)
-        self.assertRaises(ValidationError, error_causing.save)
-        self.assertRaises(ValidationError, error_causing.clean)
-
-    def test_reserved_keywords_in_filters(self):
-        error_causing = Filter(name=u'huge__with_double_underscore', filter_type=Filter.GREY_SCALE)
-        self.assertRaises(ValidationError, error_causing.save)
-        self.assertRaises(ValidationError, error_causing.clean)
-
     def test_thumbnail(self):
         image = Image.objects.get(filename=u'test_image')
         # When there IS a thumbnail, the code should be this
         self.assertEqual(image.thumbnail(), u'<img src="/media/cache/test_image_thumbnail.jpg" width="100" height="100" />')
-        self.size_thumbnail.delete()
+        # Delete thumbnail
+        thumbnail_size = settings.DJANGO_IMAGE_TOOLS_SIZES.pop('thumbnail')
+
+        # When there is no thumbnail size, display the original
         image = Image.objects.get(filename=u'test_image')
         self.assertEqual(image.thumbnail(), u'<img src="/media/test_image.jpg" width="100" height="100" />')
+
+        # Put it back
+        settings.DJANGO_IMAGE_TOOLS_SIZES['thumbnail'] = thumbnail_size
 
     def test_title(self):
         image = Image.objects.get(filename=u'test_image')
@@ -397,9 +365,6 @@ class SimpleTest(TestCase):
 
         delete_image(image)
         delete_image(imagew)
-
-        for s in Size.objects.all():
-            s.delete()
 
         # Delete the temporary images
         os.remove(u'{0}/test_input_bmp.bmp'.format(settings.DJANGO_IMAGE_TOOLS_CACHE_ROOT))
