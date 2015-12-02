@@ -15,7 +15,7 @@ from __future__ import absolute_import
 from django.conf.urls import patterns, url
 from .views import ComponentImage, SingleImage
 
-urlpatterns = patterns(u'',
+urlpatterns = [
     url(r'^(?P<pk>\d)/component$', ComponentImage.as_view()),
     url(r'^(?P<pk>\d)$', SingleImage.as_view()),
-)
+]

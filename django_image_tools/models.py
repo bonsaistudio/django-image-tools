@@ -42,8 +42,8 @@ class Size(models.Model):
     width = models.PositiveSmallIntegerField(null=True, blank=True)
     height = models.PositiveSmallIntegerField(null=True, blank=True)
     auto = models.PositiveSmallIntegerField(choices=automatic_choices, help_text=u'Choose whether to force '
-                                                                                   u'aspect ratio or resize based on '
-                                                                                   u'width / height')
+                                                                                 u'aspect ratio or resize based on '
+                                                                                 u'width / height')
 
     def __unicode__(self):
         return u'{0} - ({1}, {2})'.format(self.name, self.width, self.height)
@@ -118,14 +118,18 @@ class Image(models.Model):
         (3, u'2/3'),
         (4, u'Right')
     )
-    image = models.ImageField(upload_to=settings.UPLOAD_TO, help_text=u'uploading an image will take time. DO NOT PUSH THE SAVE BUTTON AGAIN UNTIL THE IMAGE HAS BEEN SAVED!')
+
+    image = models.ImageField(upload_to=settings.UPLOAD_TO,
+                              help_text=u'uploading an image will take time. '
+                                        u'DO NOT PUSH THE SAVE BUTTON AGAIN UNTIL THE IMAGE HAS BEEN SAVED!',
+                              max_length=500)
     checksum = models.CharField(max_length=32)
     filename = models.SlugField(help_text=u'If you want to rename the image, write here the new filename',
                                 validators=[RegexValidator(regex=r'^[A-Za-z\-\_0-9]*$',
-                                                          message=u'Filename can only contain letters, '
-                                                                  u'numbers and \'-\'.'
-                                                                  u'No extensions allowed (I\'ll put it for you'), ]
-    )
+                                                           message=u'Filename can only contain letters, '
+                                                                   u'numbers and \'-\'.'
+                                                                   u'No extensions allowed (I\'ll put it for you'), ]
+                                )
     subject_position_horizontal = models.PositiveSmallIntegerField(choices=choices_H,
                                                                    default=2,
                                                                    verbose_name=u'Subject Horizontal Position',
@@ -223,7 +227,9 @@ class Image(models.Model):
                 super(models.Model, self).__getattribute__(name)
 
     def save(self, *args, **kwargs):
-        if os.path.exists(path_for_image(self)) and md5Checksum(path_for_image(self)) != self.checksum:
+        if self.pk is None:
+            self.checksum = md5_checksum(current_path_for_image(self))
+        if os.path.exists(path_for_image(self)) and md5_checksum(path_for_image(self)) != self.checksum:
             raise ValidationError(u'An image with the same name already exists!')
         super(Image, self).save(*args, **kwargs)
 
@@ -235,8 +241,8 @@ class Image(models.Model):
         post_save.connect(convert_to_png, Image)
 
 
-def md5Checksum(filePath):
-    with open(filePath, u'rb') as fh:
+def md5_checksum(file_path):
+    with open(file_path, u'rb') as fh:
         m = hashlib.md5()
         while True:
             data = fh.read(8192)
@@ -366,14 +372,14 @@ def media_path_for_image_with_filter_and_size(image_object, im_filter, size):
 
 
 def current_path_for_image(imageObject):
-    return imageObject.image.file.name
+    return imageObject.image.name
 
 
 def path_for_image(imageObject, force_extension=None):
     filename, extension = os.path.splitext(os.path.basename(imageObject.image.name))
     if force_extension is not None:
         extension = force_extension
-    return u'{0}/{1}{2}'.format(settings.MEDIA_ROOT, filename, extension)
+    return u'{0}/{1}{2}'.format(settings.MEDIA_ROOT, imageObject.filename, extension)
 
 
 def image_with_size(image, size):
@@ -441,7 +447,7 @@ def convert_to_png(sender, **kwargs):
 
     if os.path.exists(path_for_image(imageObject)):
         # If there's already an image with the same name, check the checksum
-        if not md5Checksum(path_for_image(imageObject)) == imageObject.checksum:
+        if not md5_checksum(path_for_image(imageObject)) == imageObject.checksum:
             # The images are different. Cannot rename, raise an exception
             raise ValidationError(u'There is already an image with the same name')
 
@@ -459,7 +465,7 @@ def convert_to_png(sender, **kwargs):
         img.save(path)
         imageObject.image.name = path_for_image(imageObject, extension)
 
-    imageObject.checksum = md5Checksum(path_for_image(imageObject))
+    imageObject.checksum = md5_checksum(path_for_image(imageObject))
     imageObject.was_upscaled = False
     imageObject.save_bypassing_signals()
 
@@ -471,7 +477,7 @@ def get_image_on_request(image_object, size):
         return media_path_for_image(image_object)
     path = path_for_image_with_size(image_object, size)
 
-    if not os.path.exists(path) or image_object.checksum != md5Checksum(path_for_image(image_object)):
+    if not os.path.exists(path) or image_object.checksum != md5_checksum(path_for_image(image_object)):
         render_image_with_size(image_object, size)
     return media_path_for_image_with_size(image_object, size)
 
@@ -486,6 +492,7 @@ def get_image_with_filter_and_size(image_object, im_filter, size):
 
 def delete_images_with_size(sender, **kwargs):
     delete_images_for_size(kwargs['instance'])
+
 
 def delete_images_with_filter(sender, **kwargs):
     delete_images_for_filter(kwargs['instance'])

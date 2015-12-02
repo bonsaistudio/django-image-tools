@@ -35,6 +35,7 @@ def create_dummy_image(filename=u'Test_image', title=u'Title', caption=u'Caption
     image = Image(filename=filename, title=title, caption=caption, alt_text=alt_text, credit=credit)
     with open(u'{0}/test_input.jpg'.format(settings.DJANGO_IMAGE_TOOLS_CACHE_ROOT), u'rb') as f:
         image.image.save(u'testjpg.jpg', File(f))
+    image.save()
     return image
 
 
@@ -56,7 +57,7 @@ class SimpleTest(TestCase):
         im.save(u'{0}/test_input_bmp.bmp'.format(settings.DJANGO_IMAGE_TOOLS_CACHE_ROOT))
         imagew = Image(filename=u'wasbmp', title=u'Test', caption=u'Test', alt_text=u'Test', credit=u'none.')
         with open(u'{0}/test_input_bmp.bmp'.format(settings.DJANGO_IMAGE_TOOLS_CACHE_ROOT), u'rb') as f:
-            imagew.image.save(u'{0}/testbmp.bmp'.format(settings.DJANGO_IMAGE_TOOLS_CACHE_ROOT), File(f))
+            imagew.image.save(u'testbmp.bmp', File(f))
 
         size = Size(name='thumbnail', width=30, height=30, auto=Size.AUTO_NOTHING)
         size.save()
@@ -115,7 +116,6 @@ class SimpleTest(TestCase):
         self.assertTrue(os.path.exists(path_for_image(image)))
         self.assertEqual(Image.objects.all().count(), 2) # There should be two images in the db
         self.assertEqual(Image.objects.all()[0].filename, u'test_image')
-        self.assertEqual(path_for_image(image), self.imagepath)
 
     def testJPGConversion(self):
         """
