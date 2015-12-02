@@ -5,18 +5,14 @@ python:
   - 3.3
   - pypy
 env:
-  - DJANGO=1.4.0
-  - DJANGO=1.4.5
-  - DJANGO=1.5
-  - DJANGO=1.6
   - DJANGO=1.7
   - DJANGO=1.8
+  - DJANGO=1.9
 before_install:
   - export DJANGO_SETTINGS_MODULE=django_image_tools.tests.settings
 install:
   - pip install -q Django==$DJANGO --use-mirrors
   - pip install Pillow --use-mirrors
-  - pip install South
   - pip install coveralls
   - pip install . --use-mirrors
 script:

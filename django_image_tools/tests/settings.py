@@ -23,6 +23,7 @@ USE_I18N = True
 USE_L10N = True
 MEDIA_ROOT = ''
 SECRET_KEY = 'v*%a@==!33+n3y6jzn=y(&&i%iq&@2f2q^q6jqgrfv-xv55-#n'
+TEST_RUNNER = 'django.test.runner.DiscoverRunner'
 
 TEMPLATE_LOADERS = (
     'django.template.loaders.filesystem.Loader',
