@@ -105,6 +105,6 @@ DJANGO_IMAGE_TOOLS_FILTERS = {
     },
     'blurred': {
         'filter_type': 'GAUSSIAN_BLUR',
-        'value': 5
+        'value': 3
     }
 }
