@@ -11,10 +11,10 @@ env:
 before_install:
   - export DJANGO_SETTINGS_MODULE=django_image_tools.tests.settings
 install:
-  - pip install -q Django==$DJANGO --use-mirrors
-  - pip install Pillow --use-mirrors
+  - pip install -q Django==$DJANGO
+  - pip install -r requirements.txt
   - pip install coveralls
-  - pip install . --use-mirrors
+  - pip install .
 script:
   - python manage.py migrate --noinput && coverage run --source=django_image_tools --omit=*django_migrations*,*admin* manage.py test django_image_tools
 after_success:

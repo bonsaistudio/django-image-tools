@@ -157,7 +157,7 @@ class SimpleTest(TestCase):
         # Check that the red pixel is still there
         r, g, b = im.getpixel((0, 0))
 
-        self.assertTrue(r == g == b == 0)
+        self.assertTrue(r != g == b == 0)
 
     def test_cropping_center(self):
         image = Image.objects.get(filename=u'test_image')
