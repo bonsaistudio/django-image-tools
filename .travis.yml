@@ -1,6 +1,7 @@
 language: python
 python:
   - 2.7
+  - 3.3
   - 3.5
   - pypy
 env:
@@ -20,5 +21,11 @@ after_success:
   - coveralls
 matrix:
   exclude:
-    # Fails. Django issue #19944
-    # https://code.djangoproject.com/ticket/19944
+    # Fails. Django issue
+    # https://gist.github.com/thefourtheye/2205fe8ff7974e2cebf6
+    - python: 3.5
+      env: DJANGO=1.7
+    # Deprecated version
+    - python: 3.3
+      env: DJANGO=1.8
+      env: DJANGO=1.9
