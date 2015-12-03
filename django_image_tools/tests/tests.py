@@ -156,6 +156,7 @@ class SimpleTest(TestCase):
 
         # Check that the red pixel is still there
         r, g, b = im.getpixel((0, 0))
+        print("R: {r}, G: {g}, B: {b}".format(r=r, g=g, b=b))
 
         self.assertTrue(r != g == b == 0)
 
