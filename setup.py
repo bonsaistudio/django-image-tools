@@ -1,16 +1,16 @@
 from distutils.core import setup
 
-setup(name='django-image-tools',
-      version='0.8.b3',
+setup(name='django-image-tools-2',
+      version='v1.0',
       description='Image tools for Django',
-      author='Bonsai Studio',
-      author_email='info@bonsai-studio.net',
+      author='Gabriele Platania',
+      author_email='gabriele.platania@gmail.com',
       url='http://github.com/bonsaistudio/django-image-tools',
       license='BSD',
       keywords='django image filter tools resize crop',
       long_description=open('README.rst').read(),
       classifiers=[
-          'Development Status :: 4 - Beta',
+          'Development Status :: 5 - Production/Stable',
           'Framework :: Django',
           'Environment :: Web Environment',
           'License :: OSI Approved :: BSD License',

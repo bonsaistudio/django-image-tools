@@ -5,7 +5,7 @@ All you have to do is
 
 ::
 
-    pip install django-image-tools
+    pip install django-image-tools-2
 
 and of course, add the app in your INSTALLED_APPS as
 
