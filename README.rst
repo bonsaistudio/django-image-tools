@@ -3,11 +3,11 @@ Django Image Tools
 
 .. image:: https://travis-ci.org/bonsaistudio/django-image-tools.svg?branch=master
 
-.. image:: https://pypip.in/version/django-image-tools/badge.png
+.. image:: https://img.shields.io/pypi/v/django-image-tools.svg
 
-.. image:: https://pypip.in/license/django-image-tools/badge.png
+.. image:: https://img.shields.io/pypi/l/django-image-tools.svg
 
-.. image:: https://pypip.in/download/django-image-tools/badge.png
+.. image:: https://img.shields.io/pypi/dm/django-image-tools.svg
 
 .. image:: https://coveralls.io/repos/bonsaistudio/django-image-tools/badge.png
 
